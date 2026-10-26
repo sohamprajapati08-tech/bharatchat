@@ -53,8 +53,9 @@ CREATE TABLE IF NOT EXISTS calls (
 CREATE TABLE IF NOT EXISTS statuses (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    type VARCHAR(20) DEFAULT 'text', -- 'text', 'image'
+    type VARCHAR(20) DEFAULT 'text', -- 'text', 'image', 'video'
     content TEXT NOT NULL,
+    caption TEXT,
     background_color VARCHAR(30) DEFAULT '#008069',
     viewers JSONB DEFAULT '[]'::jsonb, -- array of user IDs who viewed
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

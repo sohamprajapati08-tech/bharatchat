@@ -17,10 +17,15 @@ public class StatusService {
     private final UserStatusRepository statusRepository;
 
     public UserStatus postStatus(UUID userId, String type, String content, String bgColor) {
+        return postStatus(userId, type, content, bgColor, null);
+    }
+
+    public UserStatus postStatus(UUID userId, String type, String content, String bgColor, String caption) {
         UserStatus status = UserStatus.builder()
                 .userId(userId)
                 .type(type != null ? type : "text")
                 .content(content)
+                .caption(caption)
                 .backgroundColor(bgColor != null ? bgColor : "#008069")
                 .viewers("[]")
                 .expiresAt(Instant.now().plus(24, ChronoUnit.HOURS))

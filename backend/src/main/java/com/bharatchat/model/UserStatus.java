@@ -25,10 +25,13 @@ public class UserStatus {
 
     @Column(length = 20)
     @Builder.Default
-    private String type = "text"; // text, image
+    private String type = "text"; // text, image, video
 
     @Column(nullable = false, columnDefinition = "TEXT")
-    private String content;
+    private String content; // text or media base64/url
+
+    @Column(columnDefinition = "TEXT")
+    private String caption; // caption for photo or video status
 
     @Column(length = 30)
     @Builder.Default

@@ -36,7 +36,8 @@ public class StatusController {
                 userId,
                 body.get("type"),
                 body.get("content"),
-                body.get("backgroundColor")
+                body.get("backgroundColor"),
+                body.get("caption")
         );
         return ResponseEntity.ok(status);
     }

@@ -86,12 +86,15 @@
     };
 
     // ====== APPLICATION STATE (ZERO FAKE DATA) ======
+    let storyTimer = null;
+
     const state = {
         currentUser: null,
         activeContact: null,
         messages: {}, // { contactId: [ {id, text, sent, time, status, reaction, quote} ] }
         recentChats: [], // Ordered list of contact IDs who have exchanged messages
-        contacts: [], // ONLY real registered users
+        contacts: [], // ONLY real registered users in DB
+        phonebook: [], // WhatsApp Saved Phone Contacts: [ { name, phone } ]
         statuses: [], // ONLY real posted statuses
         calls: [], // ONLY real call logs
         settings: {
@@ -114,7 +117,10 @@
         localStream: null,
         broadcastChannel: null,
         selectedAvatarColor: 'linear-gradient(135deg, #FF9933, #138808)',
-        selectedStatusColor: '#008069'
+        selectedStatusColor: '#008069',
+        statusMode: 'text', // 'text', 'photo', 'video'
+        statusMediaData: null,
+        statusCaption: ''
     };
 
     // ====== TRANSLATIONS FOR APP LANGUAGES ======
@@ -208,6 +214,14 @@
             const savedContacts = localStorage.getItem('bharatchat_all_users');
             state.contacts = savedContacts ? JSON.parse(savedContacts) : [];
 
+            // WhatsApp Phonebook (Saved contacts for this specific user)
+            if (state.currentUser) {
+                const savedPb = localStorage.getItem('bharatchat_phonebook_' + state.currentUser.phone);
+                state.phonebook = savedPb ? JSON.parse(savedPb) : [];
+            } else {
+                state.phonebook = [];
+            }
+
             // Real Statuses ONLY (Filtered for 24 hours expiry)
             const savedStatuses = localStorage.getItem('bharatchat_statuses');
             if (savedStatuses) {
@@ -245,6 +259,7 @@
         try {
             if (state.currentUser) {
                 localStorage.setItem('bharatchat_current_user', JSON.stringify(state.currentUser));
+                localStorage.setItem('bharatchat_phonebook_' + state.currentUser.phone, JSON.stringify(state.phonebook || []));
             }
             localStorage.setItem('bharatchat_settings', JSON.stringify(state.settings));
             localStorage.setItem('bharatchat_all_users', JSON.stringify(state.contacts));
@@ -761,7 +776,7 @@
         renderRecentChats();
     }
 
-    // ====== ALL-INDIA REGISTERED USERS DIRECTORY ======
+    // ====== WHATSAPP PHONEBOOK & CONTACTS ======
     function openNewChatModal() {
         const modal = document.getElementById('newChatModal');
         const searchInput = document.getElementById('dirSearchInput');
@@ -772,92 +787,241 @@
         searchInput.focus();
     }
 
-    function renderDirectoryUsers(filter) {
-        const listEl = document.getElementById('directoryUserList');
-        listEl.innerHTML = '';
-
-        const currentUserId = state.currentUser ? state.currentUser.id : null;
-        // Filter out current user
-        const available = state.contacts.filter(c => c.id !== currentUserId && c.phone !== (state.currentUser ? state.currentUser.phone : ''));
-
-        const filtered = available.filter(c => {
-            if (!filter) return true;
-            const term = filter.toLowerCase();
-            return (c.name && c.name.toLowerCase().includes(term)) || (c.phone && c.phone.includes(term));
-        });
-
-        if (filtered.length === 0) {
-            if (available.length === 0) {
-                listEl.innerHTML = `
-                    <div style="text-align:center; padding: 30px 16px; color: var(--text-secondary);">
-                        <div style="font-size: 32px; margin-bottom: 10px;">👥</div>
-                        <h4 style="color: var(--text-primary); margin-bottom: 6px;">No Other Users Registered Yet</h4>
-                        <p style="font-size: 13px; line-height: 1.5; margin-bottom: 16px;">
-                            Only real users who register in the database appear here. Share your BharatChat link with friends so they can register and chat with you!
-                        </p>
-                    </div>
-                `;
-            } else {
-                listEl.innerHTML = `
-                    <div style="text-align:center; padding: 24px; color: var(--text-secondary);">
-                        <p>No registered user found matching "${escapeHtml(filter)}"</p>
-                    </div>
-                `;
-            }
-            return;
-        }
-
-        filtered.forEach(contact => {
-            const item = document.createElement('div');
-            item.className = 'dir-user-item';
-            item.onclick = () => {
-                closeNewChatModal();
-                selectContact(contact);
-            };
-
-            item.innerHTML = `
-                <div class="dir-user-left">
-                    <div class="avatar" style="background:${contact.color || 'linear-gradient(135deg, #FF9933, #138808)'}">
-                        <span>${contact.initials || 'U'}</span>
-                        <div class="avatar-status ${contact.status === 'online' ? 'online' : ''}"></div>
-                    </div>
-                    <div>
-                        <div class="dir-user-name">${escapeHtml(contact.name)}</div>
-                        <div class="dir-user-phone">🇮🇳 +91 ${contact.phone}</div>
-                        <div class="dir-user-about">${escapeHtml(contact.about || 'At BharatChat 🇮🇳')}</div>
-                    </div>
-                </div>
-                <button class="dir-btn-chat">Message</button>
-            `;
-            listEl.appendChild(item);
-        });
-    }
-
     function closeNewChatModal() {
         document.getElementById('newChatModal').style.display = 'none';
     }
 
-    // ====== STATUS STORIES (REAL USER STATUSES ONLY) ======
+    function openAddContactModal() {
+        document.getElementById('inputNewContactName').value = '';
+        document.getElementById('inputNewContactPhone').value = '';
+        document.getElementById('addContactModal').style.display = 'flex';
+        document.getElementById('inputNewContactName').focus();
+    }
+
+    function closeAddContactModal() {
+        document.getElementById('addContactModal').style.display = 'none';
+    }
+
+    function saveNewContact(name, phone) {
+        const cleanPhone = phone.replace(/[^0-9]/g, '').slice(-10);
+        if (cleanPhone.length < 10) {
+            alert('Please enter a valid 10-digit Indian mobile number');
+            return;
+        }
+        if (!name.trim()) {
+            alert('Please enter a contact name');
+            return;
+        }
+
+        if (!state.phonebook) state.phonebook = [];
+        const existingIdx = state.phonebook.findIndex(p => p.phone === cleanPhone);
+        if (existingIdx !== -1) {
+            state.phonebook[existingIdx].name = name.trim();
+        } else {
+            state.phonebook.push({ name: name.trim(), phone: cleanPhone });
+        }
+
+        saveState();
+        closeAddContactModal();
+        renderDirectoryUsers(document.getElementById('dirSearchInput').value);
+        renderStatusUpdates();
+
+        const isReg = state.contacts.find(c => c.phone === cleanPhone);
+        if (isReg) {
+            alert(`Great! ${name.trim()} (+91 ${cleanPhone}) is registered on BharatChat! You can now chat.`);
+        } else {
+            alert(`Saved! ${name.trim()} (+91 ${cleanPhone}) has been added to your BharatChat phonebook.`);
+        }
+    }
+
+    async function syncPhoneContacts() {
+        if ('contacts' in navigator && 'ContactsManager' in window) {
+            try {
+                const props = ['name', 'tel'];
+                const contacts = await navigator.contacts.select(props, { multiple: true });
+                let addedCount = 0;
+                contacts.forEach(c => {
+                    const name = (c.name && c.name[0]) || 'Friend';
+                    const tel = (c.tel && c.tel[0]) || '';
+                    const clean = tel.replace(/[^0-9]/g, '').slice(-10);
+                    if (clean.length === 10) {
+                        const exists = state.phonebook.find(p => p.phone === clean);
+                        if (!exists) {
+                            state.phonebook.push({ name, phone: clean });
+                            addedCount++;
+                        }
+                    }
+                });
+                saveState();
+                renderDirectoryUsers('');
+                renderStatusUpdates();
+                alert(`Successfully synced ${addedCount} contacts from your phone!`);
+                return;
+            } catch (err) {}
+        }
+
+        // Quick Contact Add prompt for desktop / browsers without Contact Picker API
+        const samplePrompt = prompt(
+            "Enter 10-digit Indian phone number to add to your contacts:\nExample: 9825012345\n\n(Tip: You can paste multiple comma-separated numbers)"
+        );
+        if (samplePrompt) {
+            const rawItems = samplePrompt.split(',');
+            let count = 0;
+            rawItems.forEach(item => {
+                const digits = item.replace(/[^0-9]/g, '').slice(-10);
+                if (digits.length === 10) {
+                    const exists = state.phonebook.find(p => p.phone === digits);
+                    if (!exists) {
+                        state.phonebook.push({ name: 'Contact ' + digits.slice(-4), phone: digits });
+                        count++;
+                    }
+                }
+            });
+            saveState();
+            renderDirectoryUsers('');
+            renderStatusUpdates();
+            alert(`Added ${count} contact(s) to your BharatChat phonebook!`);
+        }
+    }
+
+    window.inviteContact = function (name, phone) {
+        const text = encodeURIComponent(`Hey ${name}! Join me on BharatChat 🇮🇳 — India's own secure messenger! Download/Open: https://bharatchat-omega.vercel.app/`);
+        window.open(`https://api.whatsapp.com/send?phone=91${phone}&text=${text}`, '_blank');
+    };
+
+    function renderDirectoryUsers(filter) {
+        const listEl = document.getElementById('directoryUserList');
+        listEl.innerHTML = '';
+
+        const currentPhone = state.currentUser ? state.currentUser.phone : '';
+        const phonebook = state.phonebook || [];
+        const subtitleEl = document.getElementById('contactsCountSubtitle');
+        if (subtitleEl) subtitleEl.textContent = `${phonebook.length} contacts in phonebook`;
+
+        if (phonebook.length === 0) {
+            listEl.innerHTML = `
+                <div style="text-align:center; padding: 36px 20px; color: var(--text-secondary);">
+                    <div style="font-size: 38px; margin-bottom: 12px;">📇</div>
+                    <h4 style="color: var(--text-primary); margin-bottom: 8px;">No Contacts in Phonebook Yet</h4>
+                    <p style="font-size: 13px; line-height: 1.5; margin-bottom: 16px;">
+                        WhatsApp only shows contacts saved in your phone. Tap <strong>"New Contact"</strong> above to save your friend's number, or tap <strong>"Sync Phone Contacts"</strong>!
+                    </p>
+                </div>
+            `;
+            return;
+        }
+
+        const term = (filter || '').toLowerCase();
+        const filteredPhonebook = phonebook.filter(p => {
+            if (!term) return true;
+            return p.name.toLowerCase().includes(term) || p.phone.includes(term);
+        });
+
+        // Split into Registered on BharatChat vs Not Registered (Invite)
+        const registered = [];
+        const inviteOnly = [];
+
+        filteredPhonebook.forEach(entry => {
+            if (entry.phone === currentPhone) return; // Don't show self
+            const regUser = state.contacts.find(c => c.phone === entry.phone);
+            if (regUser) {
+                registered.push({
+                    ...regUser,
+                    phonebookName: entry.name
+                });
+            } else {
+                inviteOnly.push(entry);
+            }
+        });
+
+        // 1. Registered Contacts on BharatChat
+        if (registered.length > 0) {
+            const header = document.createElement('div');
+            header.className = 'contact-section-header';
+            header.textContent = `Contacts on BharatChat (${registered.length})`;
+            listEl.appendChild(header);
+
+            registered.forEach(user => {
+                const item = document.createElement('div');
+                item.className = 'dir-user-item';
+                item.onclick = () => {
+                    closeNewChatModal();
+                    selectContact(user);
+                };
+                item.innerHTML = `
+                    <div class="dir-user-left">
+                        <div class="avatar" style="background:${user.color || 'linear-gradient(135deg, #FF9933, #138808)'}">
+                            <span>${user.phonebookName.charAt(0).toUpperCase()}</span>
+                            <div class="avatar-status ${user.status === 'online' ? 'online' : ''}"></div>
+                        </div>
+                        <div>
+                            <div class="dir-user-name">${escapeHtml(user.phonebookName)}</div>
+                            <div class="dir-user-phone">🇮🇳 +91 ${user.phone}</div>
+                            <div class="dir-user-about">${escapeHtml(user.about || 'At BharatChat 🇮🇳')}</div>
+                        </div>
+                    </div>
+                    <button class="dir-btn-chat">Chat</button>
+                `;
+                listEl.appendChild(item);
+            });
+        }
+
+        // 2. Invite Contacts
+        if (inviteOnly.length > 0) {
+            const header = document.createElement('div');
+            header.className = 'contact-section-header';
+            header.textContent = `Invite to BharatChat (${inviteOnly.length})`;
+            listEl.appendChild(header);
+
+            inviteOnly.forEach(contact => {
+                const item = document.createElement('div');
+                item.className = 'dir-user-item';
+                item.innerHTML = `
+                    <div class="dir-user-left">
+                        <div class="avatar" style="background:#54656f;">
+                            <span>${contact.name.charAt(0).toUpperCase()}</span>
+                        </div>
+                        <div>
+                            <div class="dir-user-name">${escapeHtml(contact.name)}</div>
+                            <div class="dir-user-phone">🇮🇳 +91 ${contact.phone}</div>
+                            <div class="dir-user-about" style="color:var(--text-muted);">Not on BharatChat yet</div>
+                        </div>
+                    </div>
+                    <button class="invite-badge-btn" onclick="inviteContact('${escapeHtml(contact.name)}', '${contact.phone}')">Invite</button>
+                `;
+                listEl.appendChild(item);
+            });
+        }
+    }
+
+    // ====== STATUS STORIES (WHATSAPP PHONEBOOK PRIVACY + PHOTO/VIDEO SUPPORT) ======
     function renderStatusUpdates() {
         const listEl = document.getElementById('statusList');
         listEl.innerHTML = '';
 
         // My Status UI update
         const myStatusTimeEl = document.getElementById('myStatusTime');
-        const myActiveStatuses = state.currentUser ? state.statuses.filter(s => s.userId === state.currentUser.id) : [];
+        const myActiveStatuses = state.currentUser ? state.statuses.filter(s => s.userId === state.currentUser.id || s.phone === state.currentUser.phone) : [];
         if (myActiveStatuses.length > 0) {
             myStatusTimeEl.textContent = `${myActiveStatuses.length} active update${myActiveStatuses.length > 1 ? 's' : ''}`;
         } else {
             myStatusTimeEl.textContent = 'Tap to add status update';
         }
 
-        // Other users' statuses
-        const otherStatuses = state.currentUser ? state.statuses.filter(s => s.userId !== state.currentUser.id) : state.statuses;
+        // WhatsApp Status Privacy: ONLY show statuses from numbers in user's phonebook!
+        const allowedPhones = new Set((state.phonebook || []).map(p => p.phone));
+        const otherStatuses = state.statuses.filter(s => {
+            if (state.currentUser && (s.userId === state.currentUser.id || s.phone === state.currentUser.phone)) {
+                return false;
+            }
+            const statusPhone = s.phone || (s.userId && s.userId.replace('u-', ''));
+            return allowedPhones.has(statusPhone);
+        });
 
         if (otherStatuses.length === 0) {
             listEl.innerHTML = `
                 <div style="padding: 24px 16px; text-align: center; color: var(--text-muted); font-size: 13px;">
-                    No recent updates from contacts.<br>Tap '+' on My Status to post the first update!
+                    No recent updates from your phone contacts.<br>Tap '+' on My Status to share a photo, video, or text!
                 </div>
             `;
             return;
@@ -868,6 +1032,8 @@
             item.className = 'status-item';
             item.onclick = () => openStoryViewer(status);
 
+            const typeIcon = status.type === 'video' ? '🎥 ' : (status.type === 'image' ? '📷 ' : '');
+
             item.innerHTML = `
                 <div class="status-avatar-wrap">
                     <div class="avatar status-ring" style="background:${status.color}">
@@ -876,7 +1042,7 @@
                 </div>
                 <div class="status-text-info">
                     <div class="status-user-name">${escapeHtml(status.name)}</div>
-                    <div class="status-time">${status.time}</div>
+                    <div class="status-time">${typeIcon}${status.time}</div>
                 </div>
             `;
             listEl.appendChild(item);
@@ -887,22 +1053,141 @@
         const modal = document.getElementById('storyViewerModal');
         document.getElementById('storyUserName').textContent = status.name;
         document.getElementById('storyTimeAgo').textContent = status.time;
-        document.getElementById('storyTextContent').textContent = status.text;
         document.getElementById('storyUserAvatar').style.background = status.color;
         document.getElementById('storyUserAvatar').querySelector('span').textContent = status.initials;
-        document.getElementById('storyViewerBody').style.background = status.bgColor || status.color;
+
+        const textEl = document.getElementById('storyTextContent');
+        const imgEl = document.getElementById('storyImageContent');
+        const vidEl = document.getElementById('storyVideoContent');
+        const capEl = document.getElementById('storyCaption');
+        const bodyEl = document.getElementById('storyViewerBody');
+
+        textEl.style.display = 'none';
+        imgEl.style.display = 'none';
+        vidEl.style.display = 'none';
+        capEl.style.display = 'none';
+
+        if (status.type === 'image') {
+            bodyEl.style.background = '#000';
+            imgEl.src = status.content;
+            imgEl.style.display = 'block';
+            if (status.caption) {
+                capEl.textContent = status.caption;
+                capEl.style.display = 'block';
+            }
+        } else if (status.type === 'video') {
+            bodyEl.style.background = '#000';
+            vidEl.src = status.content;
+            vidEl.style.display = 'block';
+            vidEl.play().catch(() => {});
+            if (status.caption) {
+                capEl.textContent = status.caption;
+                capEl.style.display = 'block';
+            }
+        } else {
+            bodyEl.style.background = status.bgColor || status.color || '#008069';
+            textEl.textContent = status.content || status.text;
+            textEl.style.display = 'block';
+        }
 
         modal.style.display = 'flex';
 
-        setTimeout(() => {
-            modal.style.display = 'none';
-        }, 5000);
+        // Story progress animation
+        const progressBarFill = document.getElementById('storyProgressBarFill');
+        if (progressBarFill) {
+            progressBarFill.style.animation = 'none';
+            void progressBarFill.offsetWidth;
+            const duration = status.type === 'video' ? 15 : 5;
+            progressBarFill.style.animation = `storyProgress ${duration}s linear forwards`;
+        }
+
+        if (storyTimer) clearTimeout(storyTimer);
+        const autoDuration = status.type === 'video' ? 15000 : 5000;
+        storyTimer = setTimeout(() => {
+            closeStoryViewer();
+        }, autoDuration);
+    }
+
+    function closeStoryViewer() {
+        const modal = document.getElementById('storyViewerModal');
+        const vidEl = document.getElementById('storyVideoContent');
+        if (vidEl) {
+            vidEl.pause();
+            vidEl.src = '';
+        }
+        modal.style.display = 'none';
+        if (storyTimer) clearTimeout(storyTimer);
+    }
+
+    function setStatusMode(mode) {
+        state.statusMode = mode;
+        state.statusMediaData = null;
+
+        const textBtn = document.getElementById('btnStatusModeText');
+        const photoBtn = document.getElementById('btnStatusModePhoto');
+        const videoBtn = document.getElementById('btnStatusModeVideo');
+        const textWrap = document.getElementById('statusTextModeWrap');
+        const mediaWrap = document.getElementById('statusMediaModeWrap');
+        const fileInput = document.getElementById('statusFileInput');
+        const mediaIcon = document.getElementById('statusMediaIcon');
+        const mediaPrompt = document.getElementById('statusMediaPrompt');
+        const imgPrev = document.getElementById('statusImgPreview');
+        const vidPrev = document.getElementById('statusVidPreview');
+        const emptyMsg = document.getElementById('statusEmptyMediaMsg');
+
+        textBtn.classList.toggle('active', mode === 'text');
+        photoBtn.classList.toggle('active', mode === 'photo');
+        videoBtn.classList.toggle('active', mode === 'video');
+
+        imgPrev.style.display = 'none';
+        vidPrev.style.display = 'none';
+        emptyMsg.style.display = 'block';
+
+        if (mode === 'text') {
+            textWrap.style.display = 'block';
+            mediaWrap.style.display = 'none';
+        } else if (mode === 'photo') {
+            textWrap.style.display = 'none';
+            mediaWrap.style.display = 'block';
+            fileInput.accept = 'image/*';
+            mediaIcon.textContent = '📷';
+            mediaPrompt.textContent = 'Click below to choose a photo from your gallery';
+        } else if (mode === 'video') {
+            textWrap.style.display = 'none';
+            mediaWrap.style.display = 'block';
+            fileInput.accept = 'video/*';
+            mediaIcon.textContent = '🎥';
+            mediaPrompt.textContent = 'Click below to choose a video from your gallery';
+        }
+    }
+
+    function handleStatusFileSelect(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            state.statusMediaData = e.target.result;
+            const imgPrev = document.getElementById('statusImgPreview');
+            const vidPrev = document.getElementById('statusVidPreview');
+            const emptyMsg = document.getElementById('statusEmptyMediaMsg');
+
+            emptyMsg.style.display = 'none';
+            if (file.type.startsWith('image/')) {
+                imgPrev.src = state.statusMediaData;
+                imgPrev.style.display = 'block';
+                vidPrev.style.display = 'none';
+            } else if (file.type.startsWith('video/')) {
+                vidPrev.src = state.statusMediaData;
+                vidPrev.style.display = 'block';
+                imgPrev.style.display = 'none';
+            }
+        };
+        reader.readAsDataURL(file);
     }
 
     function openCreateStatusModal() {
         const modal = document.getElementById('createStatusModal');
-        const textarea = document.getElementById('statusTextInput');
-        textarea.value = '';
+        document.getElementById('statusTextInput').value = '';
+        document.getElementById('statusCaptionInput').value = '';
         state.selectedStatusColor = '#008069';
         document.getElementById('statusCreatorPreview').style.background = '#008069';
 
@@ -910,19 +1195,34 @@
             btn.classList.toggle('active', btn.getAttribute('data-color') === '#008069');
         });
 
+        setStatusMode('text');
         modal.style.display = 'flex';
-        textarea.focus();
+        document.getElementById('statusTextInput').focus();
     }
 
     function closeCreateStatusModal() {
         document.getElementById('createStatusModal').style.display = 'none';
+        state.statusMediaData = null;
     }
 
     function postNewStatus() {
-        const text = document.getElementById('statusTextInput').value.trim();
-        if (!text) {
-            alert('Please write something for your status!');
-            return;
+        const mode = state.statusMode || 'text';
+        let content = '';
+        let caption = '';
+
+        if (mode === 'text') {
+            content = document.getElementById('statusTextInput').value.trim();
+            if (!content) {
+                alert('Please type something for your status!');
+                return;
+            }
+        } else {
+            if (!state.statusMediaData) {
+                alert(`Please choose a ${mode === 'video' ? 'video' : 'photo'} file first!`);
+                return;
+            }
+            content = state.statusMediaData;
+            caption = document.getElementById('statusCaptionInput').value.trim();
         }
 
         const now = new Date();
@@ -931,11 +1231,14 @@
         const statusObj = {
             id: 'st-' + Date.now(),
             userId: state.currentUser ? state.currentUser.id : 'me',
+            phone: state.currentUser ? state.currentUser.phone : '',
             name: state.currentUser ? state.currentUser.name : 'Me',
             initials: state.currentUser ? state.currentUser.initials : 'U',
             color: state.currentUser ? state.currentUser.color : 'linear-gradient(135deg, #FF9933, #138808)',
+            type: mode === 'photo' ? 'image' : (mode === 'video' ? 'video' : 'text'),
+            content: content,
+            caption: caption,
             bgColor: state.selectedStatusColor,
-            text: text,
             time: `Today, ${timeStr}`,
             timestamp: Date.now()
         };
@@ -1670,9 +1973,32 @@
         document.getElementById('btnCloseCreateStatusModal').onclick = closeCreateStatusModal;
         document.getElementById('btnCancelCreateStatus').onclick = closeCreateStatusModal;
         document.getElementById('btnPostStatusSubmit').onclick = postNewStatus;
-        document.getElementById('btnCloseStory').onclick = () => {
-            document.getElementById('storyViewerModal').style.display = 'none';
+        document.getElementById('btnCloseStory').onclick = closeStoryViewer;
+
+        // Status Mode Tabs (Text, Photo, Video)
+        const btnModeText = document.getElementById('btnStatusModeText');
+        const btnModePhoto = document.getElementById('btnStatusModePhoto');
+        const btnModeVideo = document.getElementById('btnStatusModeVideo');
+        const statusFileInput = document.getElementById('statusFileInput');
+        const btnPickStatusMedia = document.getElementById('btnPickStatusMedia');
+
+        if (btnModeText) btnModeText.onclick = () => setStatusMode('text');
+        if (btnModePhoto) btnModePhoto.onclick = () => {
+            setStatusMode('photo');
+            statusFileInput.click();
         };
+        if (btnModeVideo) btnModeVideo.onclick = () => {
+            setStatusMode('video');
+            statusFileInput.click();
+        };
+        if (btnPickStatusMedia) btnPickStatusMedia.onclick = () => statusFileInput.click();
+        if (statusFileInput) {
+            statusFileInput.onchange = (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    handleStatusFileSelect(e.target.files[0]);
+                }
+            };
+        }
 
         document.querySelectorAll('.status-bg-btn').forEach(btn => {
             btn.onclick = () => {
@@ -1683,24 +2009,49 @@
             };
         });
 
+        // WhatsApp Phonebook Contact Actions
+        const btnOpenAddContact = document.getElementById('btnOpenAddContact');
+        if (btnOpenAddContact) btnOpenAddContact.onclick = openAddContactModal;
+        const btnCloseAddContact = document.getElementById('btnCloseAddContactModal');
+        if (btnCloseAddContact) btnCloseAddContact.onclick = closeAddContactModal;
+        const btnCancelAddContact = document.getElementById('btnCancelAddContact');
+        if (btnCancelAddContact) btnCancelAddContact.onclick = closeAddContactModal;
+
+        const addContactForm = document.getElementById('addContactForm');
+        if (addContactForm) {
+            addContactForm.onsubmit = (e) => {
+                e.preventDefault();
+                const name = document.getElementById('inputNewContactName').value.trim();
+                const phone = document.getElementById('inputNewContactPhone').value.trim();
+                saveNewContact(name, phone);
+            };
+        }
+
+        const btnSyncPhoneContacts = document.getElementById('btnSyncPhoneContacts');
+        if (btnSyncPhoneContacts) btnSyncPhoneContacts.onclick = syncPhoneContacts;
+
         // Message Send
         const msgInput = document.getElementById('messageInput');
         const sendBtn = document.getElementById('btnSend');
 
-        sendBtn.onclick = () => {
-            const text = msgInput.value.trim();
-            if (text) {
-                sendMessage(text);
-                msgInput.value = '';
-            }
-        };
+        if (sendBtn) {
+            sendBtn.onclick = () => {
+                const text = msgInput.value.trim();
+                if (text) {
+                    sendMessage(text);
+                    msgInput.value = '';
+                }
+            };
+        }
 
-        msgInput.onkeydown = (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendBtn.click();
-            }
-        };
+        if (msgInput) {
+            msgInput.onkeydown = (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (sendBtn) sendBtn.click();
+                }
+            };
+        }
 
         // Directory & Floating Action Buttons
         document.getElementById('fabNewChat').onclick = openNewChatModal;

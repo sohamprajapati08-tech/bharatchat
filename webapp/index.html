@@ -449,22 +449,39 @@
 
     <!-- ================= MODALS & OVERLAYS ================= -->
 
-    <!-- 1. FIND BHARATCHAT USERS ACROSS INDIA MODAL -->
+    <!-- 1. SELECT CONTACT (PHONE CONTACTS ONLY — WHATSAPP STYLE) -->
     <div class="modal-overlay" id="newChatModal" style="display:none;">
         <div class="modal-card user-directory-modal">
             <div class="modal-header">
                 <div class="modal-title">
-                    <h3>BharatChat Users Across India 🇮🇳</h3>
-                    <p>Select any user or search by 10-digit mobile number</p>
+                    <h3>Select Contact</h3>
+                    <p id="contactsCountSubtitle">0 contacts in phonebook</p>
                 </div>
                 <button class="modal-close-btn" id="btnCloseNewChatModal">✕</button>
             </div>
+            <!-- WhatsApp Action Buttons: New Contact & Sync Phonebook -->
+            <div class="whatsapp-contact-actions">
+                <button class="contact-action-btn" id="btnOpenAddContact" type="button">
+                    <div class="contact-action-icon">👤+</div>
+                    <div class="contact-action-text">
+                        <strong>New Contact</strong>
+                        <span>Save new mobile number to phonebook</span>
+                    </div>
+                </button>
+                <button class="contact-action-btn" id="btnSyncPhoneContacts" type="button">
+                    <div class="contact-action-icon" style="background: rgba(37, 211, 102, 0.15); color: #25d366;">📲</div>
+                    <div class="contact-action-text">
+                        <strong>Sync Phone Contacts</strong>
+                        <span>Import contacts from your mobile phone</span>
+                    </div>
+                </button>
+            </div>
             <div class="directory-search-wrap">
                 <span class="dir-search-icon">🔍</span>
-                <input type="text" id="dirSearchInput" placeholder="Search by name or Indian mobile number (+91)...">
+                <input type="text" id="dirSearchInput" placeholder="Search contacts by name or phone...">
             </div>
             <div class="directory-user-list" id="directoryUserList">
-                <!-- Dynamic list of all BharatChat users in India -->
+                <!-- Dynamic list of registered contacts and invite contacts -->
             </div>
         </div>
     </div>
@@ -527,7 +544,7 @@
     <!-- 4. STATUS (STORY) FULLSCREEN VIEWER -->
     <div class="story-viewer-modal" id="storyViewerModal" style="display:none;">
         <div class="story-progress-bar-wrap" id="storyProgressBars">
-            <div class="story-bar"><div class="story-bar-fill"></div></div>
+            <div class="story-bar"><div class="story-bar-fill" id="storyProgressBarFill"></div></div>
         </div>
         <div class="story-viewer-header">
             <div class="avatar" id="storyUserAvatar"><span>🇮🇳</span></div>
@@ -539,6 +556,9 @@
         </div>
         <div class="story-viewer-body" id="storyViewerBody">
             <p class="story-text-content" id="storyTextContent">At BharatChat 🇮🇳</p>
+            <img class="story-media-image" id="storyImageContent" alt="Status Photo" style="display:none;" />
+            <video class="story-media-video" id="storyVideoContent" autoplay playsinline style="display:none;"></video>
+            <div class="story-caption" id="storyCaption" style="display:none;"></div>
         </div>
     </div>
 
@@ -970,7 +990,7 @@
         </div>
     </div>
 
-    <!-- 17. CREATE STATUS STORY MODAL -->
+    <!-- 17. CREATE STATUS STORY MODAL (TEXT / PHOTO / VIDEO) -->
     <div class="modal-overlay" id="createStatusModal" style="display:none;">
         <div class="modal-card">
             <div class="modal-header">
@@ -980,21 +1000,84 @@
                 </div>
                 <button class="modal-close-btn" id="btnCloseCreateStatusModal">✕</button>
             </div>
-            <div class="status-creator-body" id="statusCreatorPreview" style="background: #008069;">
-                <textarea id="statusTextInput" placeholder="Type a status update for BharatChat..." rows="4" maxlength="160"></textarea>
+
+            <!-- Status Mode Switcher: Text / Photo / Video -->
+            <div class="status-mode-tabs">
+                <button class="status-mode-btn active" id="btnStatusModeText" type="button">✍️ Text</button>
+                <button class="status-mode-btn" id="btnStatusModePhoto" type="button">📷 Photo</button>
+                <button class="status-mode-btn" id="btnStatusModeVideo" type="button">🎥 Video</button>
             </div>
-            <div class="status-color-row">
-                <span>Color:</span>
-                <button class="status-bg-btn active" data-color="#008069" style="background:#008069;"></button>
-                <button class="status-bg-btn" data-color="#FF9933" style="background:#FF9933;"></button>
-                <button class="status-bg-btn" data-color="#138808" style="background:#138808;"></button>
-                <button class="status-bg-btn" data-color="#111b21" style="background:#111b21;"></button>
-                <button class="status-bg-btn" data-color="#6d28d9" style="background:#6d28d9;"></button>
-                <button class="status-bg-btn" data-color="#e11d48" style="background:#e11d48;"></button>
+
+            <!-- Text Status Mode -->
+            <div id="statusTextModeWrap">
+                <div class="status-creator-body" id="statusCreatorPreview" style="background: #008069;">
+                    <textarea id="statusTextInput" placeholder="Type a status update for your contacts..." rows="4" maxlength="160"></textarea>
+                </div>
+                <div class="status-color-row" id="statusColorRow">
+                    <span>Color:</span>
+                    <button class="status-bg-btn active" data-color="#008069" style="background:#008069;"></button>
+                    <button class="status-bg-btn" data-color="#FF9933" style="background:#FF9933;"></button>
+                    <button class="status-bg-btn" data-color="#138808" style="background:#138808;"></button>
+                    <button class="status-bg-btn" data-color="#111b21" style="background:#111b21;"></button>
+                    <button class="status-bg-btn" data-color="#6d28d9" style="background:#6d28d9;"></button>
+                    <button class="status-bg-btn" data-color="#e11d48" style="background:#e11d48;"></button>
+                </div>
             </div>
+
+            <!-- Photo & Video Status Mode -->
+            <div id="statusMediaModeWrap" style="display:none;">
+                <div class="status-media-box" id="statusMediaPreviewBox">
+                    <img id="statusImgPreview" alt="Status Preview" style="display:none;" />
+                    <video id="statusVidPreview" controls style="display:none;"></video>
+                    <div class="status-empty-media-msg" id="statusEmptyMediaMsg">
+                        <span id="statusMediaIcon" style="font-size: 44px; display:block; margin-bottom:8px;">📷</span>
+                        <p id="statusMediaPrompt" style="color:var(--text-secondary); font-size:13px;">Click to choose photo or video from your device</p>
+                    </div>
+                </div>
+                <input type="file" id="statusFileInput" style="display:none;" accept="image/*,video/*">
+                <div style="padding: 10px 16px 0 16px;">
+                    <button class="btn-secondary" id="btnPickStatusMedia" type="button" style="width: 100%; padding: 10px; font-size: 13px;">
+                        📁 Choose File from Device
+                    </button>
+                    <input type="text" id="statusCaptionInput" class="status-caption-input" placeholder="Add a caption..." maxlength="120" style="width: 100%; margin-top: 10px; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; padding: 10px 14px; font-size: 13.5px;">
+                </div>
+            </div>
+
             <div class="theme-modal-footer">
                 <button class="btn-cancel-theme" id="btnCancelCreateStatus">Cancel</button>
                 <button class="btn-primary btn-save-theme" id="btnPostStatusSubmit">Post Status</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 18. ADD NEW CONTACT MODAL (WHATSAPP PHONEBOOK) -->
+    <div class="modal-overlay" id="addContactModal" style="display:none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <h3>New Contact 👤</h3>
+                    <p>Save contact name & 10-digit mobile number</p>
+                </div>
+                <button class="modal-close-btn" id="btnCloseAddContactModal">✕</button>
+            </div>
+            <div class="modal-body-padding">
+                <form id="addContactForm">
+                    <div class="form-group">
+                        <label>Contact Name</label>
+                        <input type="text" id="inputNewContactName" placeholder="e.g. Priya Patel, Mom, Ramesh" required>
+                    </div>
+                    <div class="form-group" style="margin-top: 14px;">
+                        <label>Indian Mobile Number</label>
+                        <div class="phone-input-group">
+                            <span class="country-code">+91</span>
+                            <input type="tel" id="inputNewContactPhone" placeholder="98250 12345" maxlength="10" required>
+                        </div>
+                    </div>
+                    <div class="theme-modal-footer" style="padding: 16px 0 0 0; margin-top: 20px;">
+                        <button type="button" class="btn-cancel-theme" id="btnCancelAddContact">Cancel</button>
+                        <button type="submit" class="btn-primary btn-save-theme">Save Contact</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
