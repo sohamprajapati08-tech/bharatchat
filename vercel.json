@@ -1,10 +1,15 @@
 {
   "version": 2,
-  "cleanUrls": true,
+  "cleanUrls": false,
   "rewrites": [
     { "source": "/", "destination": "/webapp/index.html" },
-    { "source": "/app", "destination": "/webapp/index.html" },
-    { "source": "/webapp/(.*)", "destination": "/webapp/$1" },
+    { "source": "/webapp", "destination": "/webapp/index.html" },
+    { "source": "/webapp/", "destination": "/webapp/index.html" },
+    { "source": "/styles.css", "destination": "/webapp/styles.css" },
+    { "source": "/app.js", "destination": "/webapp/app.js" },
+    { "source": "/manifest.json", "destination": "/webapp/manifest.json" },
+    { "source": "/sw.js", "destination": "/webapp/sw.js" },
+    { "source": "/assets/(.*)", "destination": "/webapp/assets/$1" },
     { "source": "/website/(.*)", "destination": "/website/$1" }
   ]
 }
