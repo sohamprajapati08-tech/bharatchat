@@ -29,9 +29,43 @@ BharatChat is India's own secure real-time messaging, voice, and video calling p
    - Detailed call log history in the "Calls" tab.
 
 4. **Appearance & Settings (Full WhatsApp Suite)**:
-   - **Dark Mode & Light Mode**: Toggle between authentic WhatsApp Dark Mode and Light Mode with a single tap.
+   - **Theme Exclusively Inside Settings**: Dark Mode, Light Mode, and System Default selection are neatly located inside **Settings → Appearance / Theme** modal (not cluttered on the outer interface!).
+   - **Mobile App Ready**: Responsive layout for smartphones, standalone PWA installable on Android and iPhone with 1 tap.
    - **Status (Stories)**: Post 24-hour expiring updates; view status updates from users across India with fullscreen auto-progress bars.
    - **WhatsApp Settings**: Profile edit (Name, About, Avatar), Privacy (Last Seen, Read receipts), Chat Wallpaper selector, Sound notifications, App Language (English, हिन्दी, ગુજરાતી, मराठी).
+
+---
+
+## 🌐 Deploy to GitHub & Live on GitHub Pages
+
+This project is Git-ready and includes automatic **GitHub Actions** deployment!
+
+### Step 1: Create a Repository on GitHub
+1. Go to [https://github.com/new](https://github.com/new).
+2. Set repository name as `bharatchat` (or your preferred name).
+3. Choose **Public**, leave other checkboxes blank, and click **Create repository**.
+
+### Step 2: Push Your Local Code to GitHub
+Open terminal/PowerShell in `d:\whatsapp india` and run:
+```bash
+git remote add origin https://github.com/YOUR_GITHUB_USERNAME/bharatchat.git
+git push -u origin main
+```
+
+### Step 3: Enable GitHub Pages
+1. On GitHub, go to your repository **Settings** → **Pages**.
+2. Under **Build and deployment** → **Source**, select **GitHub Actions** (or Deploy from a branch: `main` / `/ (root)`).
+3. Your live link will automatically be published at:
+   `https://YOUR_GITHUB_USERNAME.github.io/bharatchat/`
+
+---
+
+## 📱 Running as a Mobile App (Android & iPhone)
+
+BharatChat is engineered with **Progressive Web App (PWA)** standards:
+- **On Android**: Open your live link in Chrome → tap the 3-dots menu (⋮) → **"Install app"** or **"Add to Home screen"**. It installs as an independent native app with full-screen view and app icon!
+- **On iPhone (iOS)**: Open your live link in Safari → tap the Share button (⬆) → **"Add to Home Screen"**.
+- Inside the app, you can also go to **Settings → Install Mobile App** to prompt installation!
 
 ---
 
