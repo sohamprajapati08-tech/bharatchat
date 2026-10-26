@@ -96,13 +96,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE calls;
 ALTER PUBLICATION supabase_realtime ADD TABLE statuses;
 
 -- ================================================================
--- SEED SAMPLE USERS ACROSS INDIA (FOR INSTANT CHAT & CALLING)
+-- PURE REAL-DATA: No dummy or fake users seeded.
+-- Only real users registered through the App / Web / Database will appear.
 -- ================================================================
-INSERT INTO users (phone, name, avatar, about, status, password_hash)
-VALUES 
-    ('+919876543210', 'Aarav Sharma', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150', 'Jai Hind! 🇮🇳 Available for chat', 'online', '$2a$10$w8/u2r5w8Kj7hFvU0v0WDe48F7gYtO1hYtO1hYtO1hYtO1hYtO1hY'),
-    ('+919825012345', 'Priya Patel', 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150', 'Kem cho? BharatChat rocks! ✨', 'online', '$2a$10$w8/u2r5w8Kj7hFvU0v0WDe48F7gYtO1hYtO1hYtO1hYtO1hYtO1hY'),
-    ('+919811122334', 'Sneha Verma', 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150', 'Busy coding BharatChat 💻🇮🇳', 'online', '$2a$10$w8/u2r5w8Kj7hFvU0v0WDe48F7gYtO1hYtO1hYtO1hYtO1hYtO1hY'),
-    ('+919822233445', 'Rajesh Kumar', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150', 'Namaste from Delhi 🙏', 'offline', '$2a$10$w8/u2r5w8Kj7hFvU0v0WDe48F7gYtO1hYtO1hYtO1hYtO1hYtO1hY'),
-    ('+919833344556', 'Vikram Singh', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150', 'Proud Indian! 🇮🇳 In a meeting', 'online', '$2a$10$w8/u2r5w8Kj7hFvU0v0WDe48F7gYtO1hYtO1hYtO1hYtO1hYtO1hY')
-ON CONFLICT (phone) DO NOTHING;
+

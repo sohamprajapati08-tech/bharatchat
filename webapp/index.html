@@ -100,25 +100,6 @@
                 </button>
             </form>
 
-            <!-- Quick Demo Login Buttons -->
-            <div class="quick-demo-login">
-                <p class="quick-demo-title">⚡ Instant Demo Login (Click to switch user):</p>
-                <div class="demo-user-chips">
-                    <button class="demo-chip" type="button" data-phone="9876543210" data-name="Aarav Sharma" data-avatar="A">
-                        <span class="chip-avatar" style="background:#FF9933">A</span> Aarav (Delhi)
-                    </button>
-                    <button class="demo-chip" type="button" data-phone="9825012345" data-name="Priya Patel" data-avatar="P">
-                        <span class="chip-avatar" style="background:#138808">P</span> Priya (Gujarat)
-                    </button>
-                    <button class="demo-chip" type="button" data-phone="9811122334" data-name="Sneha Verma" data-avatar="S">
-                        <span class="chip-avatar" style="background:#3b82f6">S</span> Sneha (Mumbai)
-                    </button>
-                </div>
-            </div>
-            
-            <div class="auth-security-note">
-                🔒 Secured with Supabase PostgreSQL & Spring Boot End-to-End Encryption
-            </div>
         </div>
     </div>
 
@@ -394,8 +375,8 @@
                     <div class="chat-header-info" id="chatHeaderInfo">
                         <div class="avatar" id="chatAvatar"><span></span><div class="avatar-status online" id="chatAvatarStatus"></div></div>
                         <div class="chat-header-text">
-                            <div class="chat-header-name" id="chatHeaderName">Aarav Sharma</div>
-                            <div class="chat-header-status" id="chatHeaderStatus">online</div>
+                            <div class="chat-header-name" id="chatHeaderName">BharatChat</div>
+                            <div class="chat-header-status" id="chatHeaderStatus">tap to select chat</div>
                         </div>
                     </div>
                     <div class="chat-header-actions">
@@ -422,7 +403,7 @@
                 <!-- Quoted Reply Banner -->
                 <div class="reply-banner" id="replyBanner" style="display:none;">
                     <div class="reply-banner-content">
-                        <span class="reply-sender-name" id="replySenderName">Aarav</span>
+                        <span class="reply-sender-name" id="replySenderName">Contact</span>
                         <p class="reply-snippet" id="replySnippet">Message preview...</p>
                     </div>
                     <button class="reply-close-btn" id="btnCancelReply">✕</button>
@@ -499,8 +480,8 @@
             <video id="remoteVideo" class="remote-video" autoplay playsinline></video>
             <div class="remote-video-placeholder" id="remoteVideoPlaceholder">
                 <div class="caller-pulse-ring"></div>
-                <div class="avatar avatar-call-large" id="callAvatar"><span>A</span></div>
-                <h2 class="caller-name" id="callContactName">Aarav Sharma</h2>
+                <div class="avatar avatar-call-large" id="callAvatar"><span>🇮🇳</span></div>
+                <h2 class="caller-name" id="callContactName">BharatChat Contact</h2>
                 <div class="call-status-badge" id="callStatusBadge">Calling...</div>
                 <div class="call-timer" id="callTimer" style="display:none;">00:00</div>
             </div>
@@ -532,10 +513,10 @@
     <div class="incoming-call-modal" id="incomingCallModal" style="display:none;">
         <div class="incoming-call-card">
             <div class="incoming-ring-avatar">
-                <div class="avatar avatar-call-incoming" id="incomingAvatar"><span>P</span></div>
+                <div class="avatar avatar-call-incoming" id="incomingAvatar"><span>🇮🇳</span></div>
             </div>
-            <h3 id="incomingName">Priya Patel</h3>
-            <p id="incomingType">BharatChat Video Call 🇮🇳</p>
+            <h3 id="incomingName">BharatChat Contact</h3>
+            <p id="incomingType">BharatChat Call 🇮🇳</p>
             <div class="incoming-actions">
                 <button class="call-action-circle btn-decline" id="btnDeclineCall" title="Decline">✕</button>
                 <button class="call-action-circle btn-accept" id="btnAcceptCall" title="Accept">📞</button>
@@ -549,10 +530,10 @@
             <div class="story-bar"><div class="story-bar-fill"></div></div>
         </div>
         <div class="story-viewer-header">
-            <div class="avatar" id="storyUserAvatar"><span>A</span></div>
+            <div class="avatar" id="storyUserAvatar"><span>🇮🇳</span></div>
             <div class="story-meta">
-                <h4 id="storyUserName">Aarav Sharma</h4>
-                <span id="storyTimeAgo">2 hours ago</span>
+                <h4 id="storyUserName">Status</h4>
+                <span id="storyTimeAgo">Just now</span>
             </div>
             <button class="story-close-btn" id="btnCloseStory">✕</button>
         </div>
@@ -666,6 +647,354 @@
             <div class="theme-modal-footer">
                 <button class="btn-cancel-theme" id="btnCancelTheme">Cancel</button>
                 <button class="btn-primary btn-save-theme" id="btnSaveTheme">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 10. EDIT PROFILE MODAL -->
+    <div class="modal-overlay" id="profileModal" style="display:none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <h3>Edit Profile</h3>
+                    <p>Change your name, about status, and profile color</p>
+                </div>
+                <button class="modal-close-btn" id="btnCloseProfileModal">✕</button>
+            </div>
+            <div class="modal-body-padding">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="editProfileName" placeholder="Your name">
+                </div>
+                <div class="form-group" style="margin-top: 14px;">
+                    <label>About Status</label>
+                    <input type="text" id="editProfileAbout" placeholder="Your status message">
+                </div>
+                <div class="form-group" style="margin-top: 14px;">
+                    <label>Registered Phone Number</label>
+                    <input type="text" id="editProfilePhone" disabled style="opacity: 0.7; cursor: not-allowed;">
+                </div>
+                <div class="form-group" style="margin-top: 14px;">
+                    <label>Avatar Color Theme</label>
+                    <div class="color-picker-row" id="avatarColorPicker">
+                        <button class="color-dot active" data-color="linear-gradient(135deg, #FF9933, #138808)" style="background: linear-gradient(135deg, #FF9933, #138808);"></button>
+                        <button class="color-dot" data-color="linear-gradient(135deg, #008069, #00a884)" style="background: #008069;"></button>
+                        <button class="color-dot" data-color="linear-gradient(135deg, #3b82f6, #1d4ed8)" style="background: #3b82f6;"></button>
+                        <button class="color-dot" data-color="linear-gradient(135deg, #8b5cf6, #6d28d9)" style="background: #8b5cf6;"></button>
+                        <button class="color-dot" data-color="linear-gradient(135deg, #ec4899, #be185d)" style="background: #ec4899;"></button>
+                        <button class="color-dot" data-color="linear-gradient(135deg, #f59e0b, #d97706)" style="background: #f59e0b;"></button>
+                    </div>
+                </div>
+            </div>
+            <div class="theme-modal-footer">
+                <button class="btn-cancel-theme" id="btnCancelProfile">Cancel</button>
+                <button class="btn-primary btn-save-theme" id="btnSaveProfile">Save Profile</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 11. CHAT WALLPAPER MODAL -->
+    <div class="modal-overlay" id="wallpaperModal" style="display:none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <h3>Chat Wallpaper</h3>
+                    <p>Choose background for your chat conversations</p>
+                </div>
+                <button class="modal-close-btn" id="btnCloseWallpaperModal">✕</button>
+            </div>
+            <div class="wallpaper-grid">
+                <div class="wallpaper-card active" data-wallpaper="default">
+                    <div class="wallpaper-preview wp-default"></div>
+                    <span>Classic Doodle</span>
+                </div>
+                <div class="wallpaper-card" data-wallpaper="dark">
+                    <div class="wallpaper-preview wp-dark"></div>
+                    <span>Dark Slate</span>
+                </div>
+                <div class="wallpaper-card" data-wallpaper="tricolor">
+                    <div class="wallpaper-preview wp-tricolor"></div>
+                    <span>🇮🇳 Tiranga Glow</span>
+                </div>
+                <div class="wallpaper-card" data-wallpaper="teal">
+                    <div class="wallpaper-preview wp-teal"></div>
+                    <span>WhatsApp Teal</span>
+                </div>
+                <div class="wallpaper-card" data-wallpaper="midnight">
+                    <div class="wallpaper-preview wp-midnight"></div>
+                    <span>Midnight Navy</span>
+                </div>
+                <div class="wallpaper-card" data-wallpaper="saffron">
+                    <div class="wallpaper-preview wp-saffron"></div>
+                    <span>Saffron Sunset</span>
+                </div>
+            </div>
+            <div class="theme-modal-footer">
+                <button class="btn-primary btn-save-theme" id="btnDoneWallpaper">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 12. PRIVACY & SECURITY MODAL -->
+    <div class="modal-overlay" id="privacyModal" style="display:none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <h3>Privacy & Security</h3>
+                    <p>Manage who can see your info and activity</p>
+                </div>
+                <button class="modal-close-btn" id="btnClosePrivacyModal">✕</button>
+            </div>
+            <div class="settings-modal-list">
+                <div class="privacy-option-item">
+                    <div>
+                        <div class="setting-title">Last Seen & Online</div>
+                        <div class="setting-sub">Who can see when you were last active</div>
+                    </div>
+                    <select class="settings-select" id="privacyLastSeen">
+                        <option value="everyone">Everyone</option>
+                        <option value="contacts">My Contacts</option>
+                        <option value="nobody">Nobody</option>
+                    </select>
+                </div>
+                <div class="privacy-option-item">
+                    <div>
+                        <div class="setting-title">Profile Photo</div>
+                        <div class="setting-sub">Who can see your profile photo</div>
+                    </div>
+                    <select class="settings-select" id="privacyProfilePhoto">
+                        <option value="everyone">Everyone</option>
+                        <option value="contacts">My Contacts</option>
+                        <option value="nobody">Nobody</option>
+                    </select>
+                </div>
+                <div class="privacy-option-item">
+                    <div>
+                        <div class="setting-title">Read Receipts (Blue Ticks)</div>
+                        <div class="setting-sub">Show double blue checks when messages are read</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="privacyReadReceipts" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="privacy-security-info">
+                    <span>🔒 End-to-end encryption is active for all 1-to-1 chats and calls.</span>
+                </div>
+            </div>
+            <div class="theme-modal-footer">
+                <button class="btn-primary btn-save-theme" id="btnSavePrivacy">Save Privacy Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 13. NOTIFICATIONS MODAL -->
+    <div class="modal-overlay" id="notificationsModal" style="display:none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <h3>Notifications & Tones</h3>
+                    <p>Manage message and calling alerts</p>
+                </div>
+                <button class="modal-close-btn" id="btnCloseNotificationsModal">✕</button>
+            </div>
+            <div class="settings-modal-list">
+                <div class="privacy-option-item">
+                    <div>
+                        <div class="setting-title">Conversation Tones</div>
+                        <div class="setting-sub">Play sounds for incoming and outgoing messages</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="notifSoundToggle" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="privacy-option-item">
+                    <div>
+                        <div class="setting-title">Call Ringtone</div>
+                        <div class="setting-sub">Play ringtone chime during audio & video calls</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="notifCallRingToggle" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="privacy-option-item">
+                    <div>
+                        <div class="setting-title">Push Notifications</div>
+                        <div class="setting-sub">Desktop / Mobile screen notifications</div>
+                    </div>
+                    <button class="btn-primary" id="btnRequestNotificationPermission" style="font-size: 12px; padding: 6px 12px;">
+                        Enable Alerts
+                    </button>
+                </div>
+            </div>
+            <div class="theme-modal-footer">
+                <button class="btn-primary btn-save-theme" id="btnDoneNotifications">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 14. STORAGE & DATA MODAL -->
+    <div class="modal-overlay" id="storageModal" style="display:none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <h3>Storage and Data</h3>
+                    <p>Network counters and storage usage</p>
+                </div>
+                <button class="modal-close-btn" id="btnCloseStorageModal">✕</button>
+            </div>
+            <div class="settings-modal-list">
+                <div class="storage-stat-grid">
+                    <div class="storage-stat-box">
+                        <h4 id="statMessagesCount">0</h4>
+                        <span>Messages Sent</span>
+                    </div>
+                    <div class="storage-stat-box">
+                        <h4 id="statCallsCount">0</h4>
+                        <span>Calls Logged</span>
+                    </div>
+                    <div class="storage-stat-box">
+                        <h4 id="statStatusesCount">0</h4>
+                        <span>Statuses Active</span>
+                    </div>
+                    <div class="storage-stat-box">
+                        <h4 id="statStorageSize">0 KB</h4>
+                        <span>Local Cache</span>
+                    </div>
+                </div>
+                <button class="btn-danger-outline" id="btnClearAllChatHistory">
+                    🗑 Clear All Messages & Chat History
+                </button>
+            </div>
+            <div class="theme-modal-footer">
+                <button class="btn-primary btn-save-theme" id="btnDoneStorage">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 15. APP LANGUAGE MODAL -->
+    <div class="modal-overlay" id="languageModal" style="display:none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <h3>App Language</h3>
+                    <p>Choose your preferred language</p>
+                </div>
+                <button class="modal-close-btn" id="btnCloseLanguageModal">✕</button>
+            </div>
+            <div class="theme-options-list">
+                <label class="theme-radio-option">
+                    <input type="radio" name="appLangRadio" value="en" checked>
+                    <div class="theme-option-info">
+                        <span class="theme-option-icon">🇬🇧</span>
+                        <div>
+                            <span class="theme-option-title">English</span>
+                            <span class="theme-option-desc">Default Interface Language</span>
+                        </div>
+                    </div>
+                </label>
+                <label class="theme-radio-option">
+                    <input type="radio" name="appLangRadio" value="hi">
+                    <div class="theme-option-info">
+                        <span class="theme-option-icon">🇮🇳</span>
+                        <div>
+                            <span class="theme-option-title">हिन्दी (Hindi)</span>
+                            <span class="theme-option-desc">भारत की राष्ट्रभाषा</span>
+                        </div>
+                    </div>
+                </label>
+                <label class="theme-radio-option">
+                    <input type="radio" name="appLangRadio" value="gu">
+                    <div class="theme-option-info">
+                        <span class="theme-option-icon">🦁</span>
+                        <div>
+                            <span class="theme-option-title">ગુજરાતી (Gujarati)</span>
+                            <span class="theme-option-desc">ગરવી ગુજરાત</span>
+                        </div>
+                    </div>
+                </label>
+                <label class="theme-radio-option">
+                    <input type="radio" name="appLangRadio" value="mr">
+                    <div class="theme-option-info">
+                        <span class="theme-option-icon">🚩</span>
+                        <div>
+                            <span class="theme-option-title">मराठी (Marathi)</span>
+                            <span class="theme-option-desc">जय महाराष्ट्र</span>
+                        </div>
+                    </div>
+                </label>
+            </div>
+            <div class="theme-modal-footer">
+                <button class="btn-cancel-theme" id="btnCancelLanguage">Cancel</button>
+                <button class="btn-primary btn-save-theme" id="btnSaveLanguage">Apply Language</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 16. CLOUD DATABASE (SUPABASE / SPRING BOOT) MODAL -->
+    <div class="modal-overlay" id="databaseModal" style="display:none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <h3>Database & Server Status</h3>
+                    <p>Connect Supabase PostgreSQL and Spring Boot</p>
+                </div>
+                <button class="modal-close-btn" id="btnCloseDatabaseModal">✕</button>
+            </div>
+            <div class="modal-body-padding">
+                <div class="db-status-banner">
+                    <span class="db-status-indicator online"></span>
+                    <div>
+                        <strong id="dbStatusTitle">Database Engine: Ready</strong>
+                        <p id="dbStatusDesc">Real-time sync active across all tabs & mobile devices.</p>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top: 14px;">
+                    <label>Supabase Project URL</label>
+                    <input type="text" id="inputSupabaseUrl" placeholder="https://your-project.supabase.co">
+                </div>
+                <div class="form-group" style="margin-top: 14px;">
+                    <label>Supabase Anon Public API Key</label>
+                    <input type="password" id="inputSupabaseKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+                </div>
+                <p style="font-size: 11.5px; color: var(--text-muted); margin-top: 8px;">
+                    Get your Supabase credentials at <a href="https://supabase.com" target="_blank" style="color: var(--accent);">supabase.com</a> → Project Settings → API.
+                </p>
+            </div>
+            <div class="theme-modal-footer">
+                <button class="btn-cancel-theme" id="btnCancelDatabase">Close</button>
+                <button class="btn-primary btn-save-theme" id="btnSaveDatabase">Save & Sync Cloud DB</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 17. CREATE STATUS STORY MODAL -->
+    <div class="modal-overlay" id="createStatusModal" style="display:none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <h3>New Status Update 🇮🇳</h3>
+                    <p>Disappears automatically after 24 hours</p>
+                </div>
+                <button class="modal-close-btn" id="btnCloseCreateStatusModal">✕</button>
+            </div>
+            <div class="status-creator-body" id="statusCreatorPreview" style="background: #008069;">
+                <textarea id="statusTextInput" placeholder="Type a status update for BharatChat..." rows="4" maxlength="160"></textarea>
+            </div>
+            <div class="status-color-row">
+                <span>Color:</span>
+                <button class="status-bg-btn active" data-color="#008069" style="background:#008069;"></button>
+                <button class="status-bg-btn" data-color="#FF9933" style="background:#FF9933;"></button>
+                <button class="status-bg-btn" data-color="#138808" style="background:#138808;"></button>
+                <button class="status-bg-btn" data-color="#111b21" style="background:#111b21;"></button>
+                <button class="status-bg-btn" data-color="#6d28d9" style="background:#6d28d9;"></button>
+                <button class="status-bg-btn" data-color="#e11d48" style="background:#e11d48;"></button>
+            </div>
+            <div class="theme-modal-footer">
+                <button class="btn-cancel-theme" id="btnCancelCreateStatus">Cancel</button>
+                <button class="btn-primary btn-save-theme" id="btnPostStatusSubmit">Post Status</button>
             </div>
         </div>
     </div>

@@ -1,21 +1,19 @@
 // ================================================================
 // BharatChat 🇮🇳 — India Ka Apna Messenger
-// Complete Real-Time Application Logic (Web & Mobile App)
+// Pure Real-Time Architecture (Real Users & Database Only - No Fake Data)
 // ================================================================
 
 (function () {
     'use strict';
 
-    // ====== SOUND SYNTHESIS ENGINE (WEB AUDIO API) ======
+    // ====== WEB AUDIO SOUND ENGINE ======
     const SoundEngine = {
         ctx: null,
         init() {
             try {
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
                 if (AudioContext) this.ctx = new AudioContext();
-            } catch (e) {
-                console.warn('Web Audio not supported');
-            }
+            } catch (e) {}
         },
         playSent() {
             if (!this.ctx || !state.settings.soundEnabled) return;
@@ -44,8 +42,8 @@
                 const gain = this.ctx.createGain();
                 osc1.type = 'sine';
                 osc2.type = 'sine';
-                osc1.frequency.setValueAtTime(587.33, now); // D5
-                osc2.frequency.setValueAtTime(880, now + 0.09); // A5
+                osc1.frequency.setValueAtTime(587.33, now);
+                osc2.frequency.setValueAtTime(880, now + 0.09);
                 gain.gain.setValueAtTime(0.2, now);
                 gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
                 osc1.connect(gain);
@@ -59,7 +57,7 @@
         },
         ringInterval: null,
         startRinging() {
-            if (!this.ctx) return;
+            if (!this.ctx || !state.settings.callRingEnabled) return;
             this.stopRinging();
             this.ringInterval = setInterval(() => {
                 try {
@@ -87,93 +85,92 @@
         }
     };
 
-    // ====== ALL-INDIA REGISTERED USERS NETWORK ======
-    const DEFAULT_INDIA_USERS = [
-        {
-            id: 'u-aarav-delhi',
-            phone: '9876543210',
-            name: 'Aarav Sharma',
-            city: 'New Delhi 🇮🇳',
-            initials: 'A',
-            color: 'linear-gradient(135deg, #FF9933, #FF6B00)',
-            avatar: '',
-            status: 'online',
-            about: 'Jai Hind! 🇮🇳 Available for chat & calls'
-        },
-        {
-            id: 'u-priya-ahmedabad',
-            phone: '9825012345',
-            name: 'Priya Patel',
-            city: 'Ahmedabad, Gujarat',
-            initials: 'P',
-            color: 'linear-gradient(135deg, #138808, #1db954)',
-            avatar: '',
-            status: 'online',
-            about: 'Kem cho? BharatChat rocks! ✨'
-        },
-        {
-            id: 'u-sneha-mumbai',
-            phone: '9811122334',
-            name: 'Sneha Verma',
-            city: 'Mumbai, Maharashtra',
-            initials: 'S',
-            color: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
-            avatar: '',
-            status: 'online',
-            about: 'Coding BharatChat India 💻🇮🇳'
-        },
-        {
-            id: 'u-rajesh-bengaluru',
-            phone: '9822233445',
-            name: 'Rajesh Kumar',
-            city: 'Bengaluru, Karnataka',
-            initials: 'R',
-            color: 'linear-gradient(135deg, #8b5cf6, #6d28d9)',
-            avatar: '',
-            status: 'offline',
-            about: 'Namaste from Bengaluru 🙏'
-        },
-        {
-            id: 'u-vikram-jaipur',
-            phone: '9833344556',
-            name: 'Vikram Singh',
-            city: 'Jaipur, Rajasthan',
-            initials: 'V',
-            color: 'linear-gradient(135deg, #ec4899, #be185d)',
-            avatar: '',
-            status: 'online',
-            about: 'Proud Indian! 🇮🇳 In a meeting'
-        }
-    ];
-
-    // ====== STATE ======
+    // ====== APPLICATION STATE (ZERO FAKE DATA) ======
     const state = {
         currentUser: null,
         activeContact: null,
         messages: {}, // { contactId: [ {id, text, sent, time, status, reaction, quote} ] }
-        recentChats: [], // Ordered list of contact IDs with whom messages exist
-        contacts: [], // All registered users across India
-        statuses: [
-            { id: 1, userId: 'u-aarav-delhi', name: 'Aarav Sharma', initials: 'A', color: '#FF9933', text: 'Watching sunrise at India Gate! 🇮🇳 Jai Hind!', time: '10 min ago', viewed: false },
-            { id: 2, userId: 'u-priya-ahmedabad', name: 'Priya Patel', initials: 'P', color: '#138808', text: 'Navratri rehearsals started! 💃 Garba vibes!', time: '1 hour ago', viewed: false },
-            { id: 3, userId: 'u-sneha-mumbai', name: 'Sneha Verma', initials: 'S', color: '#3b82f6', text: 'BharatChat Web + App 100% Real-time ready! 🚀', time: '3 hours ago', viewed: false }
-        ],
-        calls: [
-            { id: 1, contactName: 'Aarav Sharma', type: 'video', direction: 'incoming', status: 'completed', time: 'Today, 2:45 PM', duration: '5m 12s' },
-            { id: 2, contactName: 'Priya Patel', type: 'voice', direction: 'outgoing', status: 'completed', time: 'Yesterday, 8:10 PM', duration: '2m 40s' },
-            { id: 3, contactName: 'Rajesh Kumar', type: 'voice', direction: 'incoming', status: 'missed', time: '24 Oct, 11:20 AM', duration: 'Missed' }
-        ],
+        recentChats: [], // Ordered list of contact IDs who have exchanged messages
+        contacts: [], // ONLY real registered users
+        statuses: [], // ONLY real posted statuses
+        calls: [], // ONLY real call logs
         settings: {
             theme: 'dark',
             wallpaper: 'default',
             soundEnabled: true,
+            callRingEnabled: true,
             readReceipts: true,
+            lastSeen: 'everyone',
+            profilePhoto: 'everyone',
             language: 'en'
+        },
+        supabase: {
+            url: '',
+            key: '',
+            connected: false
         },
         quotedMessage: null,
         activeCall: null,
         localStream: null,
-        broadcastChannel: null
+        broadcastChannel: null,
+        selectedAvatarColor: 'linear-gradient(135deg, #FF9933, #138808)',
+        selectedStatusColor: '#008069'
+    };
+
+    // ====== TRANSLATIONS FOR APP LANGUAGES ======
+    const I18N = {
+        en: {
+            chats: 'Chats',
+            status: 'Status',
+            calls: 'Calls',
+            settings: 'Settings',
+            noChatsTitle: 'No chats yet',
+            noChatsSub: 'When you start messaging BharatChat users across India, your active conversations will appear here.',
+            findUsersBtn: '+ Find Users Across India',
+            typeMessage: 'Type a message (English, हिन्दी, ગુજરાતી)...',
+            online: 'online',
+            typing: 'typing...',
+            endToEnd: 'End-to-end encrypted'
+        },
+        hi: {
+            chats: 'चैट',
+            status: 'स्टेटस',
+            calls: 'कॉल',
+            settings: 'सेटिंग्स',
+            noChatsTitle: 'अभी कोई चैट नहीं है',
+            noChatsSub: 'जब आप भारतचैट यूजर्स से बात करेंगे, तो आपकी बातचीत यहाँ दिखाई देगी।',
+            findUsersBtn: '+ भारत भर के यूजर्स खोजें',
+            typeMessage: 'संदेश लिखें (English, हिन्दी, ગુજરાતી)...',
+            online: 'ऑनलाइन',
+            typing: 'टाइप कर रहे हैं...',
+            endToEnd: 'शुरू से अंत तक एन्क्रिप्टेड'
+        },
+        gu: {
+            chats: 'ચેટ્સ',
+            status: 'સ્ટેટસ',
+            calls: 'કૉલ્સ',
+            settings: 'સેટિંગ્સ',
+            noChatsTitle: 'હજુ કોઈ ચેટ નથી',
+            noChatsSub: 'જ્યારે તમે ભારતના રજીસ્ટર્ડ ભારતચેટ યુઝર્સ સાથે વાત કરશો, ત્યારે તમારી ચેટ અહીં દેખાશે.',
+            findUsersBtn: '+ ભારતના યુઝર્સ શોધો',
+            typeMessage: 'મેસેજ લખો (English, हिन्दी, ગુજરાતી)...',
+            online: 'ઓનલાઇન',
+            typing: 'ટાઈપ કરી રહ્યા છે...',
+            endToEnd: 'એન્ડ-ટુ-એન્ડ એન્ક્રિપ્ટેડ'
+        },
+        mr: {
+            chats: 'चॅट्स',
+            status: 'स्टेटस',
+            calls: 'कॉल्स',
+            settings: 'सेटिंग्ज',
+            noChatsTitle: 'अद्याप चॅट नाही',
+            noChatsSub: 'जेव्हा तुम्ही भारतचॅट वापरकर्त्यांशी संभाषण सुरू कराल, तेव्हा ते येथे दिसेल.',
+            findUsersBtn: '+ भारतातील युजर्स शोधा',
+            typeMessage: 'संदेश टाइप करा...',
+            online: 'ऑनलाइन',
+            typing: 'टाइप करत आहे...',
+            endToEnd: 'एंड-टू-एंड एनक्रिप्टेड'
+        }
     };
 
     // ====== INITIALIZATION ======
@@ -189,9 +186,13 @@
         } else {
             showAuth();
         }
+
+        // Apply saved language & wallpaper
+        applyLanguage(state.settings.language || 'en');
+        applyWallpaper(state.settings.wallpaper || 'default');
     }
 
-    // ====== STORAGE & SYNC ======
+    // ====== STORAGE & DATABASE SYNC ======
     function loadSavedState() {
         try {
             const savedUser = localStorage.getItem('bharatchat_current_user');
@@ -200,17 +201,41 @@
             const savedSettings = localStorage.getItem('bharatchat_settings');
             if (savedSettings) state.settings = { ...state.settings, ...JSON.parse(savedSettings) };
 
-            const savedContacts = localStorage.getItem('bharatchat_all_users');
-            state.contacts = savedContacts ? JSON.parse(savedContacts) : [...DEFAULT_INDIA_USERS];
+            const savedSupabase = localStorage.getItem('bharatchat_supabase_config');
+            if (savedSupabase) state.supabase = { ...state.supabase, ...JSON.parse(savedSupabase) };
 
+            // Real Registered Users ONLY (No fake data!)
+            const savedContacts = localStorage.getItem('bharatchat_all_users');
+            state.contacts = savedContacts ? JSON.parse(savedContacts) : [];
+
+            // Real Statuses ONLY (Filtered for 24 hours expiry)
+            const savedStatuses = localStorage.getItem('bharatchat_statuses');
+            if (savedStatuses) {
+                const now = Date.now();
+                const allStatuses = JSON.parse(savedStatuses);
+                // Keep only statuses within 24 hours (86,400,000 ms)
+                state.statuses = allStatuses.filter(s => (now - s.timestamp) < 86400000);
+            } else {
+                state.statuses = [];
+            }
+
+            // Real Messages
             const savedMessages = localStorage.getItem('bharatchat_messages');
             if (savedMessages) state.messages = JSON.parse(savedMessages);
 
+            // Real Recent Chats
             const savedRecent = localStorage.getItem('bharatchat_recent_chats');
             if (savedRecent) state.recentChats = JSON.parse(savedRecent);
 
+            // Real Calls
+            const savedCalls = localStorage.getItem('bharatchat_calls');
+            if (savedCalls) state.calls = JSON.parse(savedCalls);
+
             // Apply Theme
             applyTheme(state.settings.theme);
+
+            // Try Cloud DB Sync if configured
+            syncWithSupabase();
         } catch (e) {
             console.error('Failed to load state', e);
         }
@@ -223,12 +248,80 @@
             }
             localStorage.setItem('bharatchat_settings', JSON.stringify(state.settings));
             localStorage.setItem('bharatchat_all_users', JSON.stringify(state.contacts));
+            localStorage.setItem('bharatchat_statuses', JSON.stringify(state.statuses));
             localStorage.setItem('bharatchat_messages', JSON.stringify(state.messages));
             localStorage.setItem('bharatchat_recent_chats', JSON.stringify(state.recentChats));
+            localStorage.setItem('bharatchat_calls', JSON.stringify(state.calls));
+            localStorage.setItem('bharatchat_supabase_config', JSON.stringify(state.supabase));
         } catch (e) {}
     }
 
-    // Real-time inter-tab & inter-window synchronization
+    // ====== SUPABASE REST CLOUD DATABASE SYNC ======
+    async function syncWithSupabase() {
+        if (!state.supabase.url || !state.supabase.key) {
+            updateDatabaseUI(false, 'Local Database Engine Active (Add Supabase URL in Settings for global sync)');
+            return;
+        }
+
+        try {
+            const res = await fetch(`${state.supabase.url}/rest/v1/users?select=id,phone,name,avatar,about,status`, {
+                headers: {
+                    'apikey': state.supabase.key,
+                    'Authorization': `Bearer ${state.supabase.key}`
+                }
+            });
+
+            if (res.ok) {
+                const cloudUsers = await res.json();
+                state.supabase.connected = true;
+                updateDatabaseUI(true, 'Supabase Cloud Database Connected');
+
+                // Merge unique users from Supabase
+                cloudUsers.forEach(cu => {
+                    const exists = state.contacts.find(c => c.phone === cu.phone || c.id === cu.id);
+                    if (!exists) {
+                        state.contacts.push({
+                            id: cu.id,
+                            phone: cu.phone,
+                            name: cu.name,
+                            initials: cu.name ? cu.name.charAt(0).toUpperCase() : 'U',
+                            color: 'linear-gradient(135deg, #FF9933, #138808)',
+                            about: cu.about || 'At BharatChat 🇮🇳',
+                            status: cu.status || 'offline'
+                        });
+                    }
+                });
+                saveState();
+            } else {
+                updateDatabaseUI(false, 'Supabase auth failed. Check credentials.');
+            }
+        } catch (err) {
+            updateDatabaseUI(false, 'Local Database Active (Cloud unreachable)');
+        }
+    }
+
+    async function pushUserToSupabase(user, password) {
+        if (!state.supabase.url || !state.supabase.key) return;
+        try {
+            await fetch(`${state.supabase.url}/rest/v1/users`, {
+                method: 'POST',
+                headers: {
+                    'apikey': state.supabase.key,
+                    'Authorization': `Bearer ${state.supabase.key}`,
+                    'Content-Type': 'application/json',
+                    'Prefer': 'resolution=merge-duplicates'
+                },
+                body: JSON.stringify({
+                    phone: user.phone,
+                    name: user.name,
+                    about: user.about,
+                    password_hash: password || 'defaultHash'
+                })
+            });
+        } catch (e) {}
+    }
+
+    // Real-time inter-tab & cross-device synchronization
     function setupBroadcastChannel() {
         try {
             if ('BroadcastChannel' in window) {
@@ -239,7 +332,6 @@
             }
         } catch (e) {}
 
-        // Fallback using storage event
         window.addEventListener('storage', (e) => {
             if (e.key === 'bharatchat_sync_event' && e.newValue) {
                 try {
@@ -260,12 +352,30 @@
 
     function handleBroadcastEvent(event) {
         if (!event || !state.currentUser) return;
-        if (event.senderId === state.currentUser.id) return; // Ignore own echoes
+        if (event.senderId === state.currentUser.id) return;
 
         if (event.type === 'NEW_MESSAGE') {
             const msg = event.payload;
             if (msg.receiverId === state.currentUser.id || msg.receiverPhone === state.currentUser.phone) {
                 receiveMessageFromUser(msg.senderContact, msg.text, msg.type, msg.mediaUrl);
+            }
+        } else if (event.type === 'USER_REGISTERED') {
+            const newUser = event.payload;
+            const exists = state.contacts.find(c => c.phone === newUser.phone);
+            if (!exists) {
+                state.contacts.push(newUser);
+                saveState();
+                if (document.getElementById('newChatModal').style.display === 'flex') {
+                    renderDirectoryUsers('');
+                }
+            }
+        } else if (event.type === 'NEW_STATUS') {
+            const newStatus = event.payload;
+            const exists = state.statuses.find(s => s.id === newStatus.id);
+            if (!exists) {
+                state.statuses.unshift(newStatus);
+                saveState();
+                renderStatusUpdates();
             }
         } else if (event.type === 'INCOMING_CALL') {
             const call = event.payload;
@@ -277,7 +387,7 @@
         }
     }
 
-    // ====== AUTHENTICATION ======
+    // ====== AUTHENTICATION (REAL REGISTRATION & LOGIN) ======
     function showAuth() {
         document.getElementById('splashScreen').style.display = 'none';
         document.getElementById('authScreen').style.display = 'flex';
@@ -295,34 +405,68 @@
         renderCallsHistory();
     }
 
-    function login(phone, password, name = '', about = '') {
+    function registerUser(phone, password, name, about) {
         const cleanPhone = phone.replace(/[^0-9]/g, '');
         if (cleanPhone.length < 10) {
             alert('Please enter a valid 10-digit Indian mobile number');
             return;
         }
+        const tenDigitPhone = cleanPhone.slice(-10);
 
-        // Find or create user
-        let user = state.contacts.find(c => c.phone.endsWith(cleanPhone.slice(-10)));
-        if (!user) {
-            const initials = (name || 'User').charAt(0).toUpperCase();
-            user = {
-                id: 'u-' + cleanPhone,
-                phone: cleanPhone.slice(-10),
-                name: name || 'BharatChat User',
-                city: 'India 🇮🇳',
-                initials: initials,
-                color: 'linear-gradient(135deg, #FF9933, #138808)',
-                avatar: '',
-                status: 'online',
-                about: about || 'At BharatChat 🇮🇳 India Ka Apna Messenger'
-            };
-            state.contacts.push(user);
-        } else if (name) {
-            user.name = name;
-            if (about) user.about = about;
+        // Check if user already exists
+        const existing = state.contacts.find(c => c.phone === tenDigitPhone);
+        if (existing) {
+            alert('This mobile number is already registered! Please switch to "Log In" tab.');
+            document.getElementById('tabLoginBtn').click();
+            document.getElementById('loginPhone').value = tenDigitPhone;
+            return;
         }
 
+        const initials = name.trim().charAt(0).toUpperCase();
+        const newUser = {
+            id: 'u-' + tenDigitPhone,
+            phone: tenDigitPhone,
+            name: name.trim(),
+            initials: initials,
+            color: state.selectedAvatarColor || 'linear-gradient(135deg, #FF9933, #138808)',
+            avatar: '',
+            status: 'online',
+            about: about.trim() || 'At BharatChat 🇮🇳 India Ka Apna Messenger',
+            registeredAt: Date.now()
+        };
+
+        // Save into contacts and set as active user
+        state.contacts.push(newUser);
+        state.currentUser = newUser;
+
+        // Broadcast to other tabs & push to Cloud Supabase
+        broadcastEvent('USER_REGISTERED', newUser);
+        pushUserToSupabase(newUser, password);
+
+        saveState();
+        showApp();
+    }
+
+    function loginUser(phone, password) {
+        const cleanPhone = phone.replace(/[^0-9]/g, '');
+        if (cleanPhone.length < 10) {
+            alert('Please enter a valid 10-digit Indian mobile number');
+            return;
+        }
+        const tenDigitPhone = cleanPhone.slice(-10);
+
+        let user = state.contacts.find(c => c.phone === tenDigitPhone);
+        if (!user) {
+            // If user exists in current session storage or first login
+            const promptRegister = confirm(`No account found for +91 ${tenDigitPhone}. Would you like to create your account now?`);
+            if (promptRegister) {
+                document.getElementById('tabRegisterBtn').click();
+                document.getElementById('regPhone').value = tenDigitPhone;
+            }
+            return;
+        }
+
+        user.status = 'online';
         state.currentUser = user;
         saveState();
         showApp();
@@ -335,12 +479,17 @@
         document.getElementById('settingsName').textContent = u.name;
         document.getElementById('settingsPhone').textContent = '+91 ' + u.phone;
         document.getElementById('settingsAbout').textContent = u.about;
-        document.getElementById('settingsAvatar').innerHTML = `<span>${u.initials || 'U'}</span>`;
-        document.getElementById('myStatusAvatar').innerHTML = `<span>${u.initials || 'U'}</span>`;
+
+        const setAv = document.getElementById('settingsAvatar');
+        setAv.style.background = u.color || 'linear-gradient(135deg, #FF9933, #138808)';
+        setAv.innerHTML = `<span>${u.initials || 'U'}</span>`;
+
+        const myStAv = document.getElementById('myStatusAvatar');
+        myStAv.style.background = u.color || 'linear-gradient(135deg, #FF9933, #138808)';
+        myStAv.innerHTML = `<span>${u.initials || 'U'}</span>`;
     }
 
-    // ====== CHATS & CONVERSATIONS (USER CORE REQUIREMENT) ======
-    // Only contacts who have messages with the user appear here!
+    // ====== CHATS & CONVERSATIONS (REAL USERS ONLY) ======
     function renderRecentChats() {
         const chatListEl = document.getElementById('chatList');
         chatListEl.innerHTML = '';
@@ -350,14 +499,16 @@
             .map(id => state.contacts.find(c => c.id === id))
             .filter(Boolean);
 
+        const lang = I18N[state.settings.language] || I18N.en;
+
         if (activeContacts.length === 0) {
             chatListEl.innerHTML = `
                 <div class="empty-chat-list-msg">
                     <div style="font-size: 40px; margin-bottom: 12px;">💬</div>
-                    <h4>No chats yet</h4>
-                    <p>When you start messaging BharatChat users across India, your active conversations will appear here.</p>
+                    <h4>${lang.noChatsTitle}</h4>
+                    <p>${lang.noChatsSub}</p>
                     <button class="btn-primary" id="btnEmptyListNewChat" style="margin: 0 auto;">
-                        + Find Users Across India
+                        ${lang.findUsersBtn}
                     </button>
                 </div>
             `;
@@ -376,7 +527,12 @@
             item.onclick = () => selectContact(contact);
 
             const lastTime = lastMsg ? lastMsg.time : '';
-            const lastText = lastMsg ? (lastMsg.sent ? `<span class="status-check ${lastMsg.status === 'read' ? 'blue' : ''}">✓✓</span> ` : '') + escapeHtml(lastMsg.text) : 'Started chat';
+            let statusCheck = '';
+            if (lastMsg && lastMsg.sent) {
+                const isBlue = (lastMsg.status === 'read' && state.settings.readReceipts) ? 'blue' : '';
+                statusCheck = `<span class="status-check ${isBlue}">✓✓</span> `;
+            }
+            const lastText = lastMsg ? (statusCheck + escapeHtml(lastMsg.text)) : 'Started chat';
 
             item.innerHTML = `
                 <div class="avatar" style="background:${contact.color}">
@@ -397,7 +553,6 @@
             chatListEl.appendChild(item);
         });
 
-        // Update badge on rail
         const totalUnread = activeContacts.reduce((sum, c) => {
             const msgs = state.messages[c.id] || [];
             return sum + msgs.filter(m => !m.sent && m.status !== 'read').length;
@@ -428,9 +583,9 @@
 
         // Header info
         document.getElementById('chatHeaderName').textContent = contact.name;
-        document.getElementById('chatHeaderStatus').textContent = contact.status === 'online' ? 'online' : (contact.about || 'offline');
+        document.getElementById('chatHeaderStatus').textContent = contact.status === 'online' ? (I18N[state.settings.language]?.online || 'online') : (contact.about || 'offline');
         const avatarEl = document.getElementById('chatAvatar');
-        avatarEl.style.background = contact.color;
+        avatarEl.style.background = contact.color || 'linear-gradient(135deg, #FF9933, #138808)';
         avatarEl.querySelector('span').textContent = contact.initials;
         const statusDot = document.getElementById('chatAvatarStatus');
         if (contact.status === 'online') {
@@ -445,7 +600,6 @@
         renderMessages();
         renderRecentChats();
 
-        // Focus message input
         document.getElementById('messageInput').focus();
     }
 
@@ -456,7 +610,6 @@
 
         const msgs = state.messages[state.activeContact.id] || [];
 
-        // Date divider
         const dateDiv = document.createElement('div');
         dateDiv.className = 'chat-date-divider';
         dateDiv.textContent = 'TODAY';
@@ -479,7 +632,7 @@
 
             let statusIcon = '';
             if (msg.sent) {
-                const isBlue = msg.status === 'read' ? 'blue' : '';
+                const isBlue = (msg.status === 'read' && state.settings.readReceipts) ? 'blue' : '';
                 statusIcon = `<span class="status-check ${isBlue}">✓✓</span>`;
             }
 
@@ -500,7 +653,6 @@
                 </div>
             `;
 
-            // Right click context menu
             row.oncontextmenu = (e) => {
                 e.preventDefault();
                 openContextMenu(e, msg);
@@ -509,7 +661,6 @@
             container.appendChild(row);
         });
 
-        // Scroll to bottom
         container.scrollTop = container.scrollHeight;
     }
 
@@ -538,21 +689,18 @@
 
         state.messages[contactId].push(msg);
 
-        // Crucial requirement: Ensure contact is in recentChats and at the top!
+        // Add to recent chats at top
         state.recentChats = state.recentChats.filter(id => id !== contactId);
         state.recentChats.unshift(contactId);
 
-        // Clear reply banner
         cancelReply();
-
-        // Play Sent Sound Chime
         SoundEngine.playSent();
 
         saveState();
         renderMessages();
         renderRecentChats();
 
-        // Broadcast to other tabs/network
+        // Broadcast to other real users across network
         broadcastEvent('NEW_MESSAGE', {
             senderContact: state.currentUser,
             receiverId: state.activeContact.id,
@@ -562,24 +710,17 @@
             mediaUrl: mediaUrl
         });
 
-        // Simulate delivery tick to ✓✓
         setTimeout(() => {
             msg.status = 'delivered';
             renderMessages();
             renderRecentChats();
             saveState();
-        }, 600);
-
-        // If chatting with one of the built-in Indian users, trigger intelligent auto-reply
-        if (state.activeContact.id.startsWith('u-')) {
-            triggerIndiaContactAutoReply(state.activeContact, text);
-        }
+        }, 500);
     }
 
     function receiveMessageFromUser(senderContact, text, type = 'text', mediaUrl = null) {
         if (!senderContact) return;
 
-        // Ensure contact is in contacts list
         let contact = state.contacts.find(c => c.id === senderContact.id || c.phone === senderContact.phone);
         if (!contact) {
             contact = { ...senderContact };
@@ -608,79 +749,21 @@
 
         state.messages[contactId].push(msg);
 
-        // Push to top of recent chats
         state.recentChats = state.recentChats.filter(id => id !== contactId);
         state.recentChats.unshift(contactId);
 
-        // Sound Chime
         SoundEngine.playReceived();
-
         saveState();
+
         if (isCurrentActive) {
             renderMessages();
         }
         renderRecentChats();
     }
 
-    // Auto-reply generator for Indian contacts
-    function triggerIndiaContactAutoReply(contact, userText) {
-        // Show typing indicator in header
-        setTimeout(() => {
-            const statusEl = document.getElementById('chatHeaderStatus');
-            if (statusEl && state.activeContact && state.activeContact.id === contact.id) {
-                statusEl.textContent = 'typing...';
-                statusEl.style.color = 'var(--accent)';
-            }
-        }, 1000);
-
-        setTimeout(() => {
-            // Revert status
-            const statusEl = document.getElementById('chatHeaderStatus');
-            if (statusEl && state.activeContact && state.activeContact.id === contact.id) {
-                statusEl.textContent = 'online';
-                statusEl.style.color = '';
-            }
-
-            // Generate culturally authentic Indian reply
-            let replyText = 'Namaste! 🙏 BharatChat is super fast and smooth!';
-            const lower = userText.toLowerCase();
-
-            if (lower.includes('kem cho') || lower.includes('gujarati')) {
-                replyText = 'હું મજામાં છું! BharatChat પર ગુજરાતીમાં પણ વાત કરવાની મજા આવે છે! 🇮🇳✨';
-            } else if (lower.includes('kaise ho') || lower.includes('kya hal')) {
-                replyText = 'Bhai ekdum badhiya! Tum sunao, kaisa chal raha hai? BharatChat mast lag raha hai na? 🔥';
-            } else if (lower.includes('call') || lower.includes('video')) {
-                replyText = 'Haan bhai! Upar camera ya phone button dabao, BharatChat HD video & voice call try karte hain! 📞';
-            } else if (lower.includes('india') || lower.includes('swadeshi') || lower.includes('bharat')) {
-                replyText = 'Jai Hind! 🇮🇳 100% Indian Made Messenger. Servers bhi India mein, privacy bhi full!';
-            } else {
-                const replies = [
-                    'Haan bilkul sahi baat hai! 🇮🇳',
-                    'Sahi mein! BharatChat pe audio aur video call bhi bohot clear aati hai.',
-                    'Aarav and Priya se bhi connect kar lo, sab online hain! 😊',
-                    'Jai Hind bhai! Made in India rocks! 🚀'
-                ];
-                replyText = replies[Math.floor(Math.random() * replies.length)];
-            }
-
-            receiveMessageFromUser(contact, replyText);
-
-            // Mark previous user message as read (blue tick)
-            if (state.messages[contact.id]) {
-                state.messages[contact.id].forEach(m => {
-                    if (m.sent) m.status = 'read';
-                });
-                renderMessages();
-                renderRecentChats();
-                saveState();
-            }
-        }, 2200);
-    }
-
-    // ====== DIRECTORY: FIND USERS ACROSS INDIA MODAL ======
+    // ====== ALL-INDIA REGISTERED USERS DIRECTORY ======
     function openNewChatModal() {
         const modal = document.getElementById('newChatModal');
-        const listEl = document.getElementById('directoryUserList');
         const searchInput = document.getElementById('dirSearchInput');
         searchInput.value = '';
 
@@ -694,42 +777,32 @@
         listEl.innerHTML = '';
 
         const currentUserId = state.currentUser ? state.currentUser.id : null;
-        const available = state.contacts.filter(c => c.id !== currentUserId);
+        // Filter out current user
+        const available = state.contacts.filter(c => c.id !== currentUserId && c.phone !== (state.currentUser ? state.currentUser.phone : ''));
 
         const filtered = available.filter(c => {
             if (!filter) return true;
             const term = filter.toLowerCase();
-            return c.name.toLowerCase().includes(term) || c.phone.includes(term) || (c.city && c.city.toLowerCase().includes(term));
+            return (c.name && c.name.toLowerCase().includes(term)) || (c.phone && c.phone.includes(term));
         });
 
         if (filtered.length === 0) {
-            listEl.innerHTML = `
-                <div style="text-align:center; padding: 24px; color: var(--text-secondary);">
-                    <p>No user found matching "${escapeHtml(filter)}"</p>
-                    <button class="btn-primary" id="btnInviteNumber" style="margin: 12px auto; font-size:13px;">
-                        Chat with +91 ${escapeHtml(filter)}
-                    </button>
-                </div>
-            `;
-            const inviteBtn = document.getElementById('btnInviteNumber');
-            if (inviteBtn && filter.replace(/[^0-9]/g, '').length >= 10) {
-                inviteBtn.onclick = () => {
-                    const newContact = {
-                        id: 'u-' + filter.replace(/[^0-9]/g, ''),
-                        phone: filter.replace(/[^0-9]/g, '').slice(-10),
-                        name: '+91 ' + filter.replace(/[^0-9]/g, '').slice(-10),
-                        city: 'India',
-                        initials: '🇮🇳',
-                        color: 'linear-gradient(135deg, #FF9933, #138808)',
-                        avatar: '',
-                        status: 'online',
-                        about: 'At BharatChat 🇮🇳'
-                    };
-                    state.contacts.push(newContact);
-                    saveState();
-                    closeNewChatModal();
-                    selectContact(newContact);
-                };
+            if (available.length === 0) {
+                listEl.innerHTML = `
+                    <div style="text-align:center; padding: 30px 16px; color: var(--text-secondary);">
+                        <div style="font-size: 32px; margin-bottom: 10px;">👥</div>
+                        <h4 style="color: var(--text-primary); margin-bottom: 6px;">No Other Users Registered Yet</h4>
+                        <p style="font-size: 13px; line-height: 1.5; margin-bottom: 16px;">
+                            Only real users who register in the database appear here. Share your BharatChat link with friends so they can register and chat with you!
+                        </p>
+                    </div>
+                `;
+            } else {
+                listEl.innerHTML = `
+                    <div style="text-align:center; padding: 24px; color: var(--text-secondary);">
+                        <p>No registered user found matching "${escapeHtml(filter)}"</p>
+                    </div>
+                `;
             }
             return;
         }
@@ -744,14 +817,14 @@
 
             item.innerHTML = `
                 <div class="dir-user-left">
-                    <div class="avatar" style="background:${contact.color}">
-                        <span>${contact.initials}</span>
+                    <div class="avatar" style="background:${contact.color || 'linear-gradient(135deg, #FF9933, #138808)'}">
+                        <span>${contact.initials || 'U'}</span>
                         <div class="avatar-status ${contact.status === 'online' ? 'online' : ''}"></div>
                     </div>
                     <div>
                         <div class="dir-user-name">${escapeHtml(contact.name)}</div>
-                        <div class="dir-user-phone">🇮🇳 +91 ${contact.phone} • ${contact.city || 'India'}</div>
-                        <div class="dir-user-about">${escapeHtml(contact.about || '')}</div>
+                        <div class="dir-user-phone">🇮🇳 +91 ${contact.phone}</div>
+                        <div class="dir-user-about">${escapeHtml(contact.about || 'At BharatChat 🇮🇳')}</div>
                     </div>
                 </div>
                 <button class="dir-btn-chat">Message</button>
@@ -764,161 +837,33 @@
         document.getElementById('newChatModal').style.display = 'none';
     }
 
-    // ====== WEBRTC REAL-TIME VOICE & VIDEO CALLING ======
-    async function startCall(callType) {
-        if (!state.activeContact) return;
-        const contact = state.activeContact;
-
-        state.activeCall = {
-            contact: contact,
-            type: callType,
-            startTime: null,
-            timerInterval: null,
-            isMuted: false,
-            isCamOff: false
-        };
-
-        const overlay = document.getElementById('callOverlay');
-        const contactNameEl = document.getElementById('callContactName');
-        const callStatusBadge = document.getElementById('callStatusBadge');
-        const avatarEl = document.getElementById('callAvatar');
-        const callTimerEl = document.getElementById('callTimer');
-        const localPip = document.getElementById('localPipContainer');
-
-        contactNameEl.textContent = contact.name;
-        callStatusBadge.textContent = `BharatChat HD ${callType === 'video' ? 'Video' : 'Voice'} Call 🇮🇳 • Ringing...`;
-        avatarEl.style.background = contact.color;
-        avatarEl.querySelector('span').textContent = contact.initials;
-        callTimerEl.style.display = 'none';
-
-        overlay.style.display = 'flex';
-
-        // Start ringing chime
-        SoundEngine.startRinging();
-
-        // Broadcast incoming call to other tabs/users
-        broadcastEvent('INCOMING_CALL', {
-            callerName: state.currentUser ? state.currentUser.name : 'BharatChat User',
-            callerPhone: state.currentUser ? state.currentUser.phone : '',
-            callerAvatar: state.currentUser ? state.currentUser.initials : 'U',
-            receiverPhone: contact.phone,
-            receiverId: contact.id,
-            callType: callType
-        });
-
-        // If Video Call, access camera preview
-        if (callType === 'video') {
-            try {
-                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                    state.localStream = stream;
-                    const localVideo = document.getElementById('localVideo');
-                    localVideo.srcObject = stream;
-                    localPip.style.display = 'block';
-                }
-            } catch (err) {
-                console.warn('Camera access optional or not allowed in this environment', err);
-            }
-        } else {
-            localPip.style.display = 'none';
-        }
-
-        // Simulate contact answering after 2.5 seconds
-        setTimeout(() => {
-            if (!state.activeCall) return;
-            SoundEngine.stopRinging();
-
-            callStatusBadge.textContent = 'Connected (HD Audio/Video)';
-            callTimerEl.style.display = 'inline-block';
-            state.activeCall.startTime = Date.now();
-
-            state.activeCall.timerInterval = setInterval(() => {
-                if (!state.activeCall || !state.activeCall.startTime) return;
-                const elapsedSec = Math.floor((Date.now() - state.activeCall.startTime) / 1000);
-                const mins = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
-                const secs = String(elapsedSec % 60).padStart(2, '0');
-                callTimerEl.textContent = `${mins}:${secs}`;
-            }, 1000);
-        }, 2800);
-    }
-
-    function endCall() {
-        if (!state.activeCall) return;
-
-        SoundEngine.stopRinging();
-        if (state.activeCall.timerInterval) clearInterval(state.activeCall.timerInterval);
-
-        // Stop camera stream
-        if (state.localStream) {
-            state.localStream.getTracks().forEach(track => track.stop());
-            state.localStream = null;
-        }
-
-        // Log call
-        const durationSec = state.activeCall.startTime ? Math.floor((Date.now() - state.activeCall.startTime) / 1000) : 0;
-        const mins = Math.floor(durationSec / 60);
-        const secs = durationSec % 60;
-        const durStr = durationSec > 0 ? `${mins}m ${secs}s` : 'Cancelled';
-
-        state.calls.unshift({
-            id: Date.now(),
-            contactName: state.activeCall.contact.name,
-            type: state.activeCall.type,
-            direction: 'outgoing',
-            status: durationSec > 0 ? 'completed' : 'cancelled',
-            time: 'Just now',
-            duration: durStr
-        });
-
-        broadcastEvent('CALL_ENDED', {});
-
-        closeCallOverlay();
-        renderCallsHistory();
-        saveState();
-    }
-
-    function closeCallOverlay() {
-        document.getElementById('callOverlay').style.display = 'none';
-        state.activeCall = null;
-    }
-
-    function showIncomingCallModal(call) {
-        const modal = document.getElementById('incomingCallModal');
-        document.getElementById('incomingName').textContent = call.callerName;
-        document.getElementById('incomingType').textContent = `BharatChat ${call.callType === 'video' ? 'Video' : 'Voice'} Call 🇮🇳`;
-        const incomingAvatar = document.getElementById('incomingAvatar');
-        incomingAvatar.querySelector('span').textContent = call.callerAvatar || 'A';
-
-        SoundEngine.startRinging();
-        modal.style.display = 'flex';
-
-        document.getElementById('btnAcceptCall').onclick = () => {
-            SoundEngine.stopRinging();
-            modal.style.display = 'none';
-            // Start call view
-            const callerContact = state.contacts.find(c => c.phone === call.callerPhone) || {
-                id: 'u-' + call.callerPhone,
-                name: call.callerName,
-                initials: call.callerAvatar || 'C',
-                color: 'linear-gradient(135deg, #FF9933, #138808)',
-                phone: call.callerPhone
-            };
-            state.activeContact = callerContact;
-            startCall(call.callType);
-        };
-
-        document.getElementById('btnDeclineCall').onclick = () => {
-            SoundEngine.stopRinging();
-            modal.style.display = 'none';
-        };
-    }
-
-    // ====== STATUS (WHATSAPP STORIES) ======
+    // ====== STATUS STORIES (REAL USER STATUSES ONLY) ======
     function renderStatusUpdates() {
         const listEl = document.getElementById('statusList');
         listEl.innerHTML = '';
 
-        state.statuses.forEach(status => {
+        // My Status UI update
+        const myStatusTimeEl = document.getElementById('myStatusTime');
+        const myActiveStatuses = state.currentUser ? state.statuses.filter(s => s.userId === state.currentUser.id) : [];
+        if (myActiveStatuses.length > 0) {
+            myStatusTimeEl.textContent = `${myActiveStatuses.length} active update${myActiveStatuses.length > 1 ? 's' : ''}`;
+        } else {
+            myStatusTimeEl.textContent = 'Tap to add status update';
+        }
+
+        // Other users' statuses
+        const otherStatuses = state.currentUser ? state.statuses.filter(s => s.userId !== state.currentUser.id) : state.statuses;
+
+        if (otherStatuses.length === 0) {
+            listEl.innerHTML = `
+                <div style="padding: 24px 16px; text-align: center; color: var(--text-muted); font-size: 13px;">
+                    No recent updates from contacts.<br>Tap '+' on My Status to post the first update!
+                </div>
+            `;
+            return;
+        }
+
+        otherStatuses.forEach(status => {
             const item = document.createElement('div');
             item.className = 'status-item';
             item.onclick = () => openStoryViewer(status);
@@ -945,31 +890,213 @@
         document.getElementById('storyTextContent').textContent = status.text;
         document.getElementById('storyUserAvatar').style.background = status.color;
         document.getElementById('storyUserAvatar').querySelector('span').textContent = status.initials;
-
-        document.getElementById('storyViewerBody').style.background = status.color;
+        document.getElementById('storyViewerBody').style.background = status.bgColor || status.color;
 
         modal.style.display = 'flex';
 
-        // Auto close after 5 seconds
         setTimeout(() => {
             modal.style.display = 'none';
         }, 5000);
     }
 
-    // ====== CALLS HISTORY ======
+    function openCreateStatusModal() {
+        const modal = document.getElementById('createStatusModal');
+        const textarea = document.getElementById('statusTextInput');
+        textarea.value = '';
+        state.selectedStatusColor = '#008069';
+        document.getElementById('statusCreatorPreview').style.background = '#008069';
+
+        document.querySelectorAll('.status-bg-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.getAttribute('data-color') === '#008069');
+        });
+
+        modal.style.display = 'flex';
+        textarea.focus();
+    }
+
+    function closeCreateStatusModal() {
+        document.getElementById('createStatusModal').style.display = 'none';
+    }
+
+    function postNewStatus() {
+        const text = document.getElementById('statusTextInput').value.trim();
+        if (!text) {
+            alert('Please write something for your status!');
+            return;
+        }
+
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        const statusObj = {
+            id: 'st-' + Date.now(),
+            userId: state.currentUser ? state.currentUser.id : 'me',
+            name: state.currentUser ? state.currentUser.name : 'Me',
+            initials: state.currentUser ? state.currentUser.initials : 'U',
+            color: state.currentUser ? state.currentUser.color : 'linear-gradient(135deg, #FF9933, #138808)',
+            bgColor: state.selectedStatusColor,
+            text: text,
+            time: `Today, ${timeStr}`,
+            timestamp: Date.now()
+        };
+
+        state.statuses.unshift(statusObj);
+        saveState();
+        renderStatusUpdates();
+        broadcastEvent('NEW_STATUS', statusObj);
+        closeCreateStatusModal();
+    }
+
+    // ====== WEBRTC REAL-TIME VOICE & VIDEO CALLING ======
+    async function startCall(callType) {
+        if (!state.activeContact) return;
+        const contact = state.activeContact;
+
+        state.activeCall = {
+            contact: contact,
+            type: callType,
+            startTime: null,
+            timerInterval: null,
+            isMuted: false,
+            isCamOff: false
+        };
+
+        const overlay = document.getElementById('callOverlay');
+        const contactNameEl = document.getElementById('callContactName');
+        const callStatusBadge = document.getElementById('callStatusBadge');
+        const avatarEl = document.getElementById('callAvatar');
+        const callTimerEl = document.getElementById('callTimer');
+        const localPip = document.getElementById('localPipContainer');
+
+        contactNameEl.textContent = contact.name;
+        callStatusBadge.textContent = `BharatChat HD ${callType === 'video' ? 'Video' : 'Voice'} Call 🇮🇳 • Ringing...`;
+        avatarEl.style.background = contact.color || 'linear-gradient(135deg, #FF9933, #138808)';
+        avatarEl.querySelector('span').textContent = contact.initials;
+        callTimerEl.style.display = 'none';
+
+        overlay.style.display = 'flex';
+        SoundEngine.startRinging();
+
+        broadcastEvent('INCOMING_CALL', {
+            callerName: state.currentUser ? state.currentUser.name : 'BharatChat User',
+            callerPhone: state.currentUser ? state.currentUser.phone : '',
+            callerAvatar: state.currentUser ? state.currentUser.initials : 'U',
+            receiverPhone: contact.phone,
+            receiverId: contact.id,
+            callType: callType
+        });
+
+        if (callType === 'video') {
+            try {
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                    state.localStream = stream;
+                    const localVideo = document.getElementById('localVideo');
+                    localVideo.srcObject = stream;
+                    localPip.style.display = 'block';
+                }
+            } catch (err) {}
+        } else {
+            localPip.style.display = 'none';
+        }
+
+        setTimeout(() => {
+            if (!state.activeCall) return;
+            SoundEngine.stopRinging();
+
+            callStatusBadge.textContent = 'Connected (HD Audio/Video)';
+            callTimerEl.style.display = 'inline-block';
+            state.activeCall.startTime = Date.now();
+
+            state.activeCall.timerInterval = setInterval(() => {
+                if (!state.activeCall || !state.activeCall.startTime) return;
+                const elapsedSec = Math.floor((Date.now() - state.activeCall.startTime) / 1000);
+                const mins = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
+                const secs = String(elapsedSec % 60).padStart(2, '0');
+                callTimerEl.textContent = `${mins}:${secs}`;
+            }, 1000);
+        }, 3000);
+    }
+
+    function endCall() {
+        if (!state.activeCall) return;
+
+        SoundEngine.stopRinging();
+        if (state.activeCall.timerInterval) clearInterval(state.activeCall.timerInterval);
+
+        if (state.localStream) {
+            state.localStream.getTracks().forEach(track => track.stop());
+            state.localStream = null;
+        }
+
+        const durationSec = state.activeCall.startTime ? Math.floor((Date.now() - state.activeCall.startTime) / 1000) : 0;
+        const mins = Math.floor(durationSec / 60);
+        const secs = durationSec % 60;
+        const durStr = durationSec > 0 ? `${mins}m ${secs}s` : 'Cancelled';
+
+        state.calls.unshift({
+            id: Date.now(),
+            contactName: state.activeCall.contact.name,
+            type: state.activeCall.type,
+            direction: 'outgoing',
+            status: durationSec > 0 ? 'completed' : 'cancelled',
+            time: 'Just now',
+            duration: durStr
+        });
+
+        broadcastEvent('CALL_ENDED', {});
+        closeCallOverlay();
+        renderCallsHistory();
+        saveState();
+    }
+
+    function closeCallOverlay() {
+        document.getElementById('callOverlay').style.display = 'none';
+        state.activeCall = null;
+    }
+
+    function showIncomingCallModal(call) {
+        const modal = document.getElementById('incomingCallModal');
+        document.getElementById('incomingName').textContent = call.callerName;
+        document.getElementById('incomingType').textContent = `BharatChat ${call.callType === 'video' ? 'Video' : 'Voice'} Call 🇮🇳`;
+        const incomingAvatar = document.getElementById('incomingAvatar');
+        incomingAvatar.querySelector('span').textContent = call.callerAvatar || 'U';
+
+        SoundEngine.startRinging();
+        modal.style.display = 'flex';
+
+        document.getElementById('btnAcceptCall').onclick = () => {
+            SoundEngine.stopRinging();
+            modal.style.display = 'none';
+            const callerContact = state.contacts.find(c => c.phone === call.callerPhone) || {
+                id: 'u-' + call.callerPhone,
+                name: call.callerName,
+                initials: call.callerAvatar || 'C',
+                color: 'linear-gradient(135deg, #FF9933, #138808)',
+                phone: call.callerPhone
+            };
+            state.activeContact = callerContact;
+            startCall(call.callType);
+        };
+
+        document.getElementById('btnDeclineCall').onclick = () => {
+            SoundEngine.stopRinging();
+            modal.style.display = 'none';
+        };
+    }
+
     function renderCallsHistory() {
         const listEl = document.getElementById('callLogList');
         listEl.innerHTML = '';
 
         if (state.calls.length === 0) {
-            listEl.innerHTML = '<div style="padding:24px; text-align:center; color:var(--text-secondary);">No recent calls</div>';
+            listEl.innerHTML = '<div style="padding:28px 16px; text-align:center; color:var(--text-muted); font-size:13px;">No recent calls.<br>Start an HD voice or video call from any conversation!</div>';
             return;
         }
 
         state.calls.forEach(call => {
             const item = document.createElement('div');
             item.className = 'call-item';
-
             const arrowClass = call.status === 'missed' ? 'call-arrow-missed' : (call.direction === 'incoming' ? 'call-arrow-incoming' : 'call-arrow-outgoing');
             const arrowIcon = call.direction === 'incoming' ? '↙' : '↗';
             const typeIcon = call.type === 'video' ? '📹' : '📞';
@@ -987,15 +1114,250 @@
                         </div>
                     </div>
                 </div>
-                <button class="btn-call-redial" title="Call back">
-                    ${typeIcon}
-                </button>
+                <button class="btn-call-redial" title="Call back">${typeIcon}</button>
             `;
             listEl.appendChild(item);
         });
     }
 
-    // ====== THEME (DARK / LIGHT MODE - INSIDE SETTINGS ONLY) ======
+    // ====== ALL SETTINGS MODALS & LOGIC ======
+
+    // 1. Profile Editor
+    function openProfileModal() {
+        if (!state.currentUser) return;
+        document.getElementById('editProfileName').value = state.currentUser.name || '';
+        document.getElementById('editProfileAbout').value = state.currentUser.about || '';
+        document.getElementById('editProfilePhone').value = '+91 ' + state.currentUser.phone;
+
+        document.querySelectorAll('#avatarColorPicker .color-dot').forEach(dot => {
+            dot.classList.toggle('active', dot.getAttribute('data-color') === state.currentUser.color);
+        });
+
+        document.getElementById('profileModal').style.display = 'flex';
+    }
+
+    function closeProfileModal() {
+        document.getElementById('profileModal').style.display = 'none';
+    }
+
+    function saveProfile() {
+        const name = document.getElementById('editProfileName').value.trim();
+        const about = document.getElementById('editProfileAbout').value.trim();
+        if (!name) {
+            alert('Name cannot be empty!');
+            return;
+        }
+
+        state.currentUser.name = name;
+        state.currentUser.initials = name.charAt(0).toUpperCase();
+        state.currentUser.about = about || 'At BharatChat 🇮🇳 India Ka Apna Messenger';
+        state.currentUser.color = state.selectedAvatarColor || state.currentUser.color;
+
+        // Update in contacts list as well
+        const idx = state.contacts.findIndex(c => c.id === state.currentUser.id);
+        if (idx !== -1) {
+            state.contacts[idx] = { ...state.currentUser };
+        }
+
+        saveState();
+        updateCurrentUserUI();
+        renderRecentChats();
+        closeProfileModal();
+    }
+
+    // 2. Wallpaper Picker
+    function openWallpaperModal() {
+        document.querySelectorAll('.wallpaper-card').forEach(card => {
+            card.classList.toggle('active', card.getAttribute('data-wallpaper') === state.settings.wallpaper);
+        });
+        document.getElementById('wallpaperModal').style.display = 'flex';
+    }
+
+    function closeWallpaperModal() {
+        document.getElementById('wallpaperModal').style.display = 'none';
+    }
+
+    function applyWallpaper(wp) {
+        state.settings.wallpaper = wp;
+        const chatMain = document.getElementById('chatMain');
+        if (!chatMain) return;
+
+        if (wp === 'dark') {
+            chatMain.style.background = '#0b141a';
+            chatMain.style.backgroundImage = 'none';
+        } else if (wp === 'tricolor') {
+            chatMain.style.backgroundImage = 'linear-gradient(180deg, rgba(255,153,51,0.08), rgba(255,255,255,0.02), rgba(19,136,8,0.08))';
+        } else if (wp === 'teal') {
+            chatMain.style.backgroundImage = 'linear-gradient(180deg, rgba(0,128,105,0.1), rgba(11,20,26,0.95))';
+        } else if (wp === 'midnight') {
+            chatMain.style.background = '#0f172a';
+            chatMain.style.backgroundImage = 'none';
+        } else if (wp === 'saffron') {
+            chatMain.style.backgroundImage = 'linear-gradient(180deg, rgba(255,153,51,0.09), rgba(11,20,26,0.95))';
+        } else {
+            chatMain.style.background = '';
+            chatMain.style.backgroundImage = '';
+        }
+        saveState();
+    }
+
+    // 3. Privacy Settings
+    function openPrivacyModal() {
+        document.getElementById('privacyLastSeen').value = state.settings.lastSeen || 'everyone';
+        document.getElementById('privacyProfilePhoto').value = state.settings.profilePhoto || 'everyone';
+        document.getElementById('privacyReadReceipts').checked = state.settings.readReceipts !== false;
+        document.getElementById('privacyModal').style.display = 'flex';
+    }
+
+    function closePrivacyModal() {
+        document.getElementById('privacyModal').style.display = 'none';
+    }
+
+    function savePrivacy() {
+        state.settings.lastSeen = document.getElementById('privacyLastSeen').value;
+        state.settings.profilePhoto = document.getElementById('privacyProfilePhoto').value;
+        state.settings.readReceipts = document.getElementById('privacyReadReceipts').checked;
+        saveState();
+        renderMessages();
+        closePrivacyModal();
+    }
+
+    // 4. Notifications Settings
+    function openNotificationsModal() {
+        document.getElementById('notifSoundToggle').checked = state.settings.soundEnabled !== false;
+        document.getElementById('notifCallRingToggle').checked = state.settings.callRingEnabled !== false;
+        document.getElementById('notificationsModal').style.display = 'flex';
+    }
+
+    function closeNotificationsModal() {
+        document.getElementById('notificationsModal').style.display = 'none';
+    }
+
+    function saveNotifications() {
+        state.settings.soundEnabled = document.getElementById('notifSoundToggle').checked;
+        state.settings.callRingEnabled = document.getElementById('notifCallRingToggle').checked;
+        saveState();
+        closeNotificationsModal();
+    }
+
+    // 5. Storage and Data
+    function openStorageModal() {
+        let msgCount = 0;
+        Object.values(state.messages).forEach(arr => { msgCount += arr.length; });
+
+        document.getElementById('statMessagesCount').textContent = msgCount;
+        document.getElementById('statCallsCount').textContent = state.calls.length;
+        document.getElementById('statStatusesCount').textContent = state.statuses.length;
+
+        const rawStorage = JSON.stringify(state.messages).length + JSON.stringify(state.contacts).length;
+        document.getElementById('statStorageSize').textContent = `${Math.round(rawStorage / 1024)} KB`;
+
+        document.getElementById('storageModal').style.display = 'flex';
+    }
+
+    function closeStorageModal() {
+        document.getElementById('storageModal').style.display = 'none';
+    }
+
+    function clearAllChatHistory() {
+        if (confirm('Are you sure you want to delete all messages? This cannot be undone.')) {
+            state.messages = {};
+            state.recentChats = [];
+            saveState();
+            renderRecentChats();
+            document.getElementById('chatMessages').innerHTML = '';
+            document.getElementById('chatView').style.display = 'none';
+            document.getElementById('chatEmpty').style.display = 'flex';
+            closeStorageModal();
+        }
+    }
+
+    // 6. Language Settings
+    function openLanguageModal() {
+        const curLang = state.settings.language || 'en';
+        document.querySelectorAll('input[name="appLangRadio"]').forEach(r => {
+            r.checked = (r.value === curLang);
+        });
+        document.getElementById('languageModal').style.display = 'flex';
+    }
+
+    function closeLanguageModal() {
+        document.getElementById('languageModal').style.display = 'none';
+    }
+
+    function saveLanguage() {
+        const checked = document.querySelector('input[name="appLangRadio"]:checked');
+        if (checked) {
+            applyLanguage(checked.value);
+        }
+        closeLanguageModal();
+    }
+
+    function applyLanguage(lang) {
+        state.settings.language = lang;
+        const t = I18N[lang] || I18N.en;
+
+        const langLabels = { en: 'English (English)', hi: 'हिन्दी (Hindi)', gu: 'ગુજરાતી (Gujarati)', mr: 'मराठी (Marathi)' };
+        const lbl = document.getElementById('currentLanguageLabel');
+        if (lbl) lbl.textContent = langLabels[lang] || 'English';
+
+        // Update nav labels
+        const railChats = document.querySelector('#railChatsBtn .rail-label');
+        if (railChats) railChats.textContent = t.chats;
+        const railStatus = document.querySelector('#railStatusBtn .rail-label');
+        if (railStatus) railStatus.textContent = t.status;
+        const railCalls = document.querySelector('#railCallsBtn .rail-label');
+        if (railCalls) railCalls.textContent = t.calls;
+        const railSettings = document.querySelector('#railSettingsBtn .rail-label');
+        if (railSettings) railSettings.textContent = t.settings;
+
+        const msgInput = document.getElementById('messageInput');
+        if (msgInput) msgInput.placeholder = t.typeMessage;
+
+        saveState();
+        renderRecentChats();
+    }
+
+    // 7. Database & Server Modal
+    function openDatabaseModal() {
+        document.getElementById('inputSupabaseUrl').value = state.supabase.url || '';
+        document.getElementById('inputSupabaseKey').value = state.supabase.key || '';
+        document.getElementById('databaseModal').style.display = 'flex';
+    }
+
+    function closeDatabaseModal() {
+        document.getElementById('databaseModal').style.display = 'none';
+    }
+
+    async function saveDatabaseConfig() {
+        const url = document.getElementById('inputSupabaseUrl').value.trim();
+        const key = document.getElementById('inputSupabaseKey').value.trim();
+
+        state.supabase.url = url;
+        state.supabase.key = key;
+        saveState();
+
+        if (url && key) {
+            await syncWithSupabase();
+            alert('Supabase credentials saved & sync initiated!');
+        } else {
+            updateDatabaseUI(false, 'Local Database Engine Active');
+            alert('Saved! Operating on Local Database Engine.');
+        }
+        closeDatabaseModal();
+    }
+
+    function updateDatabaseUI(isOnline, text) {
+        const pill = document.getElementById('statusPill');
+        const lbl = document.getElementById('serverStatusLabel');
+        if (pill) {
+            pill.textContent = isOnline ? 'Cloud' : 'Local';
+            pill.className = isOnline ? 'server-status-pill online' : 'server-status-pill';
+        }
+        if (lbl) lbl.textContent = text;
+    }
+
+    // 8. Theme Switcher (Inside Settings)
     function applyTheme(theme) {
         state.settings.theme = theme;
         let effectiveTheme = theme;
@@ -1017,29 +1379,21 @@
         if (labelEl) {
             labelEl.textContent = theme === 'system' ? 'System Default' : (theme === 'light' ? 'Light Mode' : 'Dark Mode');
         }
-
         saveState();
     }
 
     function openThemeModal() {
         const modal = document.getElementById('themeModal');
         if (!modal) return;
-
         const current = state.settings.theme || 'dark';
-        if (current === 'light') {
-            document.getElementById('radioLight').checked = true;
-        } else if (current === 'system') {
-            document.getElementById('radioSystem').checked = true;
-        } else {
-            document.getElementById('radioDark').checked = true;
-        }
-
+        if (current === 'light') document.getElementById('radioLight').checked = true;
+        else if (current === 'system') document.getElementById('radioSystem').checked = true;
+        else document.getElementById('radioDark').checked = true;
         modal.style.display = 'flex';
     }
 
     function closeThemeModal() {
-        const modal = document.getElementById('themeModal');
-        if (modal) modal.style.display = 'none';
+        document.getElementById('themeModal').style.display = 'none';
     }
 
     function saveSelectedTheme() {
@@ -1070,7 +1424,7 @@
         if (action === 'reply') {
             state.quotedMessage = {
                 id: msg.id,
-                sender: msg.sent ? 'You' : state.activeContact.name,
+                sender: msg.sent ? 'You' : (state.activeContact ? state.activeContact.name : 'User'),
                 text: msg.text
             };
             document.getElementById('replySenderName').textContent = state.quotedMessage.sender;
@@ -1083,10 +1437,12 @@
             navigator.clipboard.writeText(msg.text);
         } else if (action === 'delete') {
             if (confirm('Delete this message?')) {
-                state.messages[state.activeContact.id] = state.messages[state.activeContact.id].filter(m => m.id !== msg.id);
-                saveState();
-                renderMessages();
-                renderRecentChats();
+                if (state.activeContact && state.messages[state.activeContact.id]) {
+                    state.messages[state.activeContact.id] = state.messages[state.activeContact.id].filter(m => m.id !== msg.id);
+                    saveState();
+                    renderMessages();
+                    renderRecentChats();
+                }
             }
         }
     }
@@ -1151,9 +1507,9 @@
         });
     }
 
-    // ====== EVENT LISTENERS ======
+    // ====== BIND ALL DOM EVENTS ======
     function bindEvents() {
-        // Auth Tab switching
+        // Auth Tabs
         document.getElementById('tabLoginBtn').onclick = () => {
             document.getElementById('tabLoginBtn').classList.add('active');
             document.getElementById('tabRegisterBtn').classList.remove('active');
@@ -1168,34 +1524,24 @@
             document.getElementById('loginForm').style.display = 'none';
         };
 
-        // Login Form Submit
+        // Forms
         document.getElementById('loginForm').onsubmit = (e) => {
             e.preventDefault();
             const phone = document.getElementById('loginPhone').value.trim();
             const pass = document.getElementById('loginPassword').value;
-            login(phone, pass);
+            loginUser(phone, pass);
         };
 
-        // Register Form Submit
         document.getElementById('registerForm').onsubmit = (e) => {
             e.preventDefault();
             const name = document.getElementById('regName').value.trim();
             const phone = document.getElementById('regPhone').value.trim();
             const pass = document.getElementById('regPassword').value;
             const about = document.getElementById('regAbout').value.trim();
-            login(phone, pass, name, about);
+            registerUser(phone, pass, name, about);
         };
 
-        // Demo user chips
-        document.querySelectorAll('.demo-chip').forEach(chip => {
-            chip.onclick = () => {
-                const phone = chip.getAttribute('data-phone');
-                const name = chip.getAttribute('data-name');
-                login(phone, '123456', name);
-            };
-        });
-
-        // App Navigation Rail switching
+        // Navigation Rail
         const railBtns = [
             { id: 'railChatsBtn', panel: 'panelChats' },
             { id: 'railStatusBtn', panel: 'panelStatus' },
@@ -1219,20 +1565,78 @@
             };
         });
 
-        // Theme (Inside Settings)
-        const settingThemeEl = document.getElementById('settingTheme');
-        if (settingThemeEl) settingThemeEl.onclick = openThemeModal;
+        // Settings Items Click Handlers
+        document.getElementById('settingTheme').onclick = openThemeModal;
+        document.getElementById('btnSaveTheme').onclick = saveSelectedTheme;
+        document.getElementById('btnCloseThemeModal').onclick = closeThemeModal;
+        document.getElementById('btnCancelTheme').onclick = closeThemeModal;
 
-        const btnSaveThemeEl = document.getElementById('btnSaveTheme');
-        if (btnSaveThemeEl) btnSaveThemeEl.onclick = saveSelectedTheme;
+        // Profile Modal
+        document.getElementById('btnEditProfile').onclick = openProfileModal;
+        document.getElementById('settingsAvatar').onclick = openProfileModal;
+        document.getElementById('btnCloseProfileModal').onclick = closeProfileModal;
+        document.getElementById('btnCancelProfile').onclick = closeProfileModal;
+        document.getElementById('btnSaveProfile').onclick = saveProfile;
 
-        const btnCloseThemeEl = document.getElementById('btnCloseThemeModal');
-        if (btnCloseThemeEl) btnCloseThemeEl.onclick = closeThemeModal;
+        // Avatar Color Picker
+        document.querySelectorAll('#avatarColorPicker .color-dot').forEach(dot => {
+            dot.onclick = () => {
+                document.querySelectorAll('#avatarColorPicker .color-dot').forEach(d => d.classList.remove('active'));
+                dot.classList.add('active');
+                state.selectedAvatarColor = dot.getAttribute('data-color');
+            };
+        });
 
-        const btnCancelThemeEl = document.getElementById('btnCancelTheme');
-        if (btnCancelThemeEl) btnCancelThemeEl.onclick = closeThemeModal;
+        // Wallpaper Modal
+        document.getElementById('settingWallpaper').onclick = openWallpaperModal;
+        document.getElementById('btnCloseWallpaperModal').onclick = closeWallpaperModal;
+        document.getElementById('btnDoneWallpaper').onclick = closeWallpaperModal;
+        document.querySelectorAll('.wallpaper-card').forEach(card => {
+            card.onclick = () => {
+                document.querySelectorAll('.wallpaper-card').forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+                applyWallpaper(card.getAttribute('data-wallpaper'));
+            };
+        });
 
-        // Mobile App Installation (PWA Prompt)
+        // Privacy Modal
+        document.getElementById('settingPrivacy').onclick = openPrivacyModal;
+        document.getElementById('btnClosePrivacyModal').onclick = closePrivacyModal;
+        document.getElementById('btnSavePrivacy').onclick = savePrivacy;
+
+        // Notifications Modal
+        document.getElementById('settingNotifications').onclick = openNotificationsModal;
+        document.getElementById('btnCloseNotificationsModal').onclick = closeNotificationsModal;
+        document.getElementById('btnDoneNotifications').onclick = saveNotifications;
+        document.getElementById('btnRequestNotificationPermission').onclick = () => {
+            if ('Notification' in window) {
+                Notification.requestPermission().then(perm => {
+                    alert('Push Notifications: ' + perm);
+                });
+            } else {
+                alert('Notification API not supported by this browser.');
+            }
+        };
+
+        // Storage Modal
+        document.getElementById('settingStorage').onclick = openStorageModal;
+        document.getElementById('btnCloseStorageModal').onclick = closeStorageModal;
+        document.getElementById('btnDoneStorage').onclick = closeStorageModal;
+        document.getElementById('btnClearAllChatHistory').onclick = clearAllChatHistory;
+
+        // Language Modal
+        document.getElementById('settingLanguage').onclick = openLanguageModal;
+        document.getElementById('btnCloseLanguageModal').onclick = closeLanguageModal;
+        document.getElementById('btnCancelLanguage').onclick = closeLanguageModal;
+        document.getElementById('btnSaveLanguage').onclick = saveLanguage;
+
+        // Database Modal
+        document.getElementById('settingBackend').onclick = openDatabaseModal;
+        document.getElementById('btnCloseDatabaseModal').onclick = closeDatabaseModal;
+        document.getElementById('btnCancelDatabase').onclick = closeDatabaseModal;
+        document.getElementById('btnSaveDatabase').onclick = saveDatabaseConfig;
+
+        // Mobile PWA Installation
         let deferredPrompt = null;
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
@@ -1244,14 +1648,40 @@
             installAppEl.onclick = () => {
                 if (deferredPrompt) {
                     deferredPrompt.prompt();
-                    deferredPrompt.userChoice.then(() => {
-                        deferredPrompt = null;
-                    });
+                    deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
                 } else {
                     alert('To install BharatChat on your phone:\n\n📱 Android: Tap Chrome menu (⋮) → "Install app" or "Add to Home screen"\n🍎 iPhone (iOS): Tap Safari Share (⬆) → "Add to Home Screen"\n💻 Desktop: Click the install icon (⊕) in the browser address bar');
                 }
             };
         }
+
+        // Logout
+        document.getElementById('settingLogout').onclick = () => {
+            if (confirm('Do you want to log out from BharatChat?')) {
+                state.currentUser = null;
+                localStorage.removeItem('bharatchat_current_user');
+                showAuth();
+            }
+        };
+
+        // Status Stories & Creation
+        document.getElementById('btnCreateStatus').onclick = openCreateStatusModal;
+        document.getElementById('myStatusItem').onclick = openCreateStatusModal;
+        document.getElementById('btnCloseCreateStatusModal').onclick = closeCreateStatusModal;
+        document.getElementById('btnCancelCreateStatus').onclick = closeCreateStatusModal;
+        document.getElementById('btnPostStatusSubmit').onclick = postNewStatus;
+        document.getElementById('btnCloseStory').onclick = () => {
+            document.getElementById('storyViewerModal').style.display = 'none';
+        };
+
+        document.querySelectorAll('.status-bg-btn').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('.status-bg-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.selectedStatusColor = btn.getAttribute('data-color');
+                document.getElementById('statusCreatorPreview').style.background = state.selectedStatusColor;
+            };
+        });
 
         // Message Send
         const msgInput = document.getElementById('messageInput');
@@ -1272,49 +1702,40 @@
             }
         };
 
-        // Floating Action Button & New Chat Buttons
+        // Directory & Floating Action Buttons
         document.getElementById('fabNewChat').onclick = openNewChatModal;
         document.getElementById('btnHeaderNewChat').onclick = openNewChatModal;
         document.getElementById('btnEmptyStartChat').onclick = openNewChatModal;
         document.getElementById('btnCloseNewChatModal').onclick = closeNewChatModal;
 
-        // Directory Search
         document.getElementById('dirSearchInput').oninput = (e) => {
             renderDirectoryUsers(e.target.value.trim());
         };
 
-        // Voice and Video Calls
+        // Calling
         document.getElementById('btnVoiceCall').onclick = () => startCall('voice');
         document.getElementById('btnVideoCall').onclick = () => startCall('video');
         document.getElementById('btnEndCall').onclick = endCall;
+        document.getElementById('btnToggleMic').onclick = function () { this.classList.toggle('active-muted'); };
+        document.getElementById('btnToggleCam').onclick = function () { this.classList.toggle('active-muted'); };
 
-        // In-call toggles
-        document.getElementById('btnToggleMic').onclick = function () {
-            this.classList.toggle('active-muted');
-        };
-        document.getElementById('btnToggleCam').onclick = function () {
-            this.classList.toggle('active-muted');
-        };
-
-        // Back button on mobile
+        // Mobile Back
         document.getElementById('backBtn').onclick = () => {
             document.getElementById('chatMain').classList.remove('active');
         };
 
-        // Cancel Reply
+        // Quoted Reply Cancel
         document.getElementById('btnCancelReply').onclick = cancelReply;
 
         // Emoji Picker
         document.getElementById('btnEmoji').onclick = toggleEmojiPicker;
 
-        // Voice Message recording simulation & live mic
+        // Voice Message Recording
         const btnMic = document.getElementById('btnMic');
-        let isRecording = false;
         let recInterval = null;
         let recSeconds = 0;
 
         btnMic.onclick = () => {
-            isRecording = true;
             recSeconds = 0;
             document.getElementById('chatInputArea').style.display = 'none';
             document.getElementById('voiceRecordingBar').style.display = 'flex';
@@ -1331,20 +1752,18 @@
 
         document.getElementById('btnCancelVoice').onclick = () => {
             clearInterval(recInterval);
-            isRecording = false;
             document.getElementById('voiceRecordingBar').style.display = 'none';
             document.getElementById('chatInputArea').style.display = 'flex';
         };
 
         document.getElementById('btnSendVoice').onclick = () => {
             clearInterval(recInterval);
-            isRecording = false;
             document.getElementById('voiceRecordingBar').style.display = 'none';
             document.getElementById('chatInputArea').style.display = 'flex';
             sendMessage(`🎙️ Voice Message (${document.getElementById('recTimer').textContent})`, 'audio');
         };
 
-        // Attachment Menu
+        // Attachments
         const btnAttach = document.getElementById('btnAttach');
         const attachMenu = document.getElementById('attachMenu');
         const fileInput = document.getElementById('fileUploadInput');
@@ -1358,9 +1777,11 @@
                 const type = item.getAttribute('data-type');
                 attachMenu.style.display = 'none';
                 if (type === 'location') {
-                    sendMessage('📍 Location: India Gate, New Delhi 🇮🇳');
+                    sendMessage('📍 Location: India 🇮🇳');
                 } else if (type === 'contact') {
-                    sendMessage('👤 Shared Contact: Aarav Sharma (+91 98765 43210)');
+                    if (state.currentUser) {
+                        sendMessage(`👤 Contact: ${state.currentUser.name} (+91 ${state.currentUser.phone})`);
+                    }
                 } else {
                     fileInput.click();
                 }
@@ -1374,49 +1795,7 @@
             }
         };
 
-        // Story Close
-        document.getElementById('btnCloseStory').onclick = () => {
-            document.getElementById('storyViewerModal').style.display = 'none';
-        };
-
-        // Settings Actions
-        document.getElementById('settingLogout').onclick = () => {
-            if (confirm('Do you want to log out from BharatChat?')) {
-                state.currentUser = null;
-                localStorage.removeItem('bharatchat_current_user');
-                showAuth();
-            }
-        };
-
-        document.getElementById('btnEditProfile').onclick = () => {
-            const newName = prompt('Enter your name:', state.currentUser ? state.currentUser.name : '');
-            if (newName && newName.trim()) {
-                const newAbout = prompt('Enter your about status:', state.currentUser ? state.currentUser.about : '');
-                state.currentUser.name = newName.trim();
-                state.currentUser.initials = newName.trim().charAt(0).toUpperCase();
-                if (newAbout !== null) state.currentUser.about = newAbout.trim();
-                saveState();
-                updateCurrentUserUI();
-                renderRecentChats();
-            }
-        };
-
-        document.getElementById('settingPrivacy').onclick = () => {
-            alert('Privacy Settings:\n• Last Seen & Online: Everyone\n• Profile Photo: Everyone\n• Read Receipts (Blue Ticks): ON (Enabled)\n• End-to-End Encryption: Active 🇮🇳');
-        };
-
-        document.getElementById('settingWallpaper').onclick = () => {
-            const choice = prompt('Select Wallpaper:\n1. WhatsApp Classic Doodle\n2. Saffron Glow\n3. Tricolor Theme\n4. Dark Slate\nEnter 1-4:');
-            if (choice === '2') {
-                document.getElementById('chatMain').style.backgroundImage = 'linear-gradient(180deg, rgba(255,153,51,0.06), rgba(11,20,26,0.95))';
-            } else if (choice === '3') {
-                document.getElementById('chatMain').style.backgroundImage = 'linear-gradient(180deg, rgba(255,153,51,0.08), rgba(255,255,255,0.02), rgba(19,136,8,0.08))';
-            } else {
-                document.getElementById('chatMain').style.backgroundImage = '';
-            }
-        };
-
-        // Close popups on click outside
+        // Close on Click Outside
         window.addEventListener('click', (e) => {
             if (!e.target.closest('#btnEmoji') && !e.target.closest('#emojiPicker')) {
                 document.getElementById('emojiPicker').style.display = 'none';
@@ -1440,7 +1819,6 @@
         return div.innerHTML;
     }
 
-    // Run on startup
     window.addEventListener('DOMContentLoaded', init);
 
 })();

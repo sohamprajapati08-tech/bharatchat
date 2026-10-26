@@ -2338,3 +2338,283 @@ input, textarea { border: none; outline: none; background: none; color: inherit;
     font-size: 13.5px;
 }
 
+/* ================= SETTINGS MODALS STYLES ================= */
+.modal-body-padding {
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.color-picker-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 6px;
+}
+
+.color-dot {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: var(--transition);
+}
+
+.color-dot.active {
+    border-color: #fff;
+    transform: scale(1.15);
+}
+
+.wallpaper-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 16px 20px;
+    max-height: 55vh;
+    overflow-y: auto;
+}
+
+.wallpaper-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: var(--radius-md);
+    border: 2px solid transparent;
+    transition: var(--transition);
+}
+
+.wallpaper-card:hover, .wallpaper-card.active {
+    border-color: var(--accent);
+    background: var(--bg-hover);
+}
+
+.wallpaper-preview {
+    width: 100%;
+    height: 75px;
+    border-radius: var(--radius-sm);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+.wp-default { background: var(--bg-chat); background-image: var(--chat-pattern); background-size: 16px 16px; }
+.wp-dark { background: #0b141a; }
+.wp-tricolor { background: linear-gradient(180deg, #FF9933 0%, #ffffff 50%, #138808 100%); opacity: 0.85; }
+.wp-teal { background: #008069; }
+.wp-midnight { background: #0f172a; }
+.wp-saffron { background: linear-gradient(180deg, #FF9933, #b45309); }
+
+.wallpaper-card span {
+    font-size: 11.5px;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.settings-modal-list {
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.privacy-option-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.settings-select {
+    background: var(--bg-input);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background-color: var(--bg-search);
+    border: 1px solid var(--border-color);
+    transition: .3s;
+    border-radius: 24px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background-color: var(--accent);
+    border-color: var(--accent);
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(20px);
+}
+
+.privacy-security-info {
+    font-size: 12px;
+    color: var(--accent);
+    background: rgba(0, 168, 132, 0.12);
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    line-height: 1.4;
+}
+
+.storage-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.storage-stat-box {
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 14px;
+    text-align: center;
+}
+
+.storage-stat-box h4 {
+    font-size: 20px;
+    color: var(--accent);
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+
+.storage-stat-box span {
+    font-size: 11.5px;
+    color: var(--text-secondary);
+}
+
+.btn-danger-outline {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #f15c6d;
+    color: #f15c6d;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    margin-top: 6px;
+    transition: var(--transition);
+    background: transparent;
+}
+
+.btn-danger-outline:hover {
+    background: rgba(241, 92, 109, 0.15);
+}
+
+.db-status-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(0, 168, 132, 0.12);
+    border: 1px solid rgba(0, 168, 132, 0.3);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+}
+
+.db-status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    flex-shrink: 0;
+}
+
+.db-status-banner strong {
+    font-size: 13.5px;
+    color: var(--text-primary);
+    display: block;
+}
+
+.db-status-banner p {
+    font-size: 11.5px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.status-creator-body {
+    padding: 30px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 140px;
+    transition: background 0.3s ease;
+}
+
+.status-creator-body textarea {
+    width: 100%;
+    color: #fff;
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 600;
+    text-align: center;
+    resize: none;
+    border: none;
+    background: transparent;
+}
+
+.status-creator-body textarea::placeholder {
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.status-color-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px;
+    background: var(--bg-input);
+    border-top: 1px solid var(--border-color);
+}
+
+.status-color-row span {
+    font-size: 12.5px;
+    color: var(--text-secondary);
+}
+
+.status-bg-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.2s;
+}
+
+.status-bg-btn.active {
+    border-color: #fff;
+    transform: scale(1.25);
+}
+
+
